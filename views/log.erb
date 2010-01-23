@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Backup control: <%= @backup.name %> Log</title>
+<link rel="stylesheet" type="text/css" href="/style.css" media="screen" />
+</head>
+<body>
+<div id="header">
+<h1>Backup control: <%= @backup.name %> Log</h1>
+ <div id="menu">
+  <ul id="nav">
+          <% @entries.each do |f| %>
+            <li><a href="/<%= f %>"><%= f %></a></li>
+          <% end %>
+  </ul>
+ </div>
+</div>
+<div id="content">
+<div id="left">
+<h2>Log (<%= @backup.log_time %>)</h2>
+<pre>
+<%= @backup.log %>
+</pre>
+</div>	
+<div id="right">
+	<div class="box">
+			<h2>News :</h2>	
+			<p>This XHTML/CSS Template was inspired by great NiftyCube layouts. It is released under GPL and it is xhtml/css valid.</p>
+	</div>
+			
+	<div class="box">
+				<h2>Links :</h2>
+				<ul>
+				<li><a href="http://www.minimalistic-design.info">Web Design Directory</a></li>
+				<li><a href="http://www.historyexplorer.net">History Timelines</a></li>
+				</ul>
+	</div>
+		
+    <div class="box">
+	   <div style="font-size: 0.8em;">Design by <a href="http://www.minimalistic-design.net">Minimalistic Design</a></div>
+	</div>
+</div>
+</div>
+</body>
+</html>
