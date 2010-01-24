@@ -6,7 +6,7 @@ require 'crtodo'
 module CRToDo
 	class Application < Sinatra::Application
 		before do
-			@model = ToDoDB.new
+			@model = CRToDo::ToDoDB.new
 			@listnames = @model.lists.keys
 		end
 
@@ -36,7 +36,11 @@ module CRToDo
 		end
 
 		put '/:name' do
-			@model.lists[params[:name]].finish
+			if params.key? :newname then
+				@model.rename_list(params[:name], params[:newname])
+			else
+				@model.lists[params[:name]].finish
+			end
 		end
 
 		delete '/:name' do

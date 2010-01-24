@@ -185,7 +185,20 @@ describe CRToDo::ToDoDB do
 		listfile.read.should == "0,%s\n" % [TODO1]
 	end
 
-	it "should be possible to delete todo entries" do
+	it "should be possible to rename a todo list" do
+		@tododb.add_list LIST
+		@tododb.lists.size.should == 1
+		@tododb.lists.values[0].name.should == LIST
+		@tempdir.children.size.should == 1
+		@tempdir.children[0].should == @tempdir + (LIST + ".csv")
+		@tododb.rename_list(LIST, LIST + "2")
+		@tododb.lists.size.should == 1
+		@tododb.lists.values[0].name.should == LIST + "2"
+		@tempdir.children.size.should == 1
+		@tempdir.children[0].should == @tempdir + (LIST + "2.csv")
+	end
+
+	it "should be possible to delete todo lists" do
 		@tododb.add_list LIST
 		@tododb.lists.size.should == 1
 		@tododb.delete_list LIST

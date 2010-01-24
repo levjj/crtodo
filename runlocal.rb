@@ -6,7 +6,7 @@ load 'crtodo_app.rb'
 
 builder = Rack::Builder.new do
   map '/' do
-    run CRToDoApp.new
+    run CRToDo::Application.new
   end
 end
 

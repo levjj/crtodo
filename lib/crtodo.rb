@@ -1,6 +1,7 @@
 require 'pathname'
 require 'csv'
 require 'json'
+require 'fileutils'
 
 module CRToDo
 	class ToDo
@@ -49,6 +50,17 @@ module CRToDo
 			@name = name
 			@entries = []
 			@loaded = false
+		end
+
+		def name=(newname)
+			write_op do
+				@name = newname
+				if !@path.nil? then
+					newpath = Pathname.new(@path).parent + (@name + ".csv")
+					FileUtils::mv(@path, newpath)
+					@path = newpath
+				end
+			end
 		end
 
 		def loaded?
@@ -157,9 +169,16 @@ module CRToDo
 			@lists.delete(name)
 		end
 
+		def rename_list(oldname, newname)
+			list = @lists[oldname]
+			@lists.delete(oldname)
+			list.name = newname;
+			@lists[newname] = list
+		end
+
 		def load_lists
 			@path.children(false).each do |listpath|
-				list = ToDoList.new(listpath.basename.chomp(".csv"))
+				list = ToDoList.new(listpath.basename.to_s.chomp(".csv"))
 				list.path = listpath.to_s
 				@lists[list.name] = list
 			end
