@@ -19,11 +19,11 @@ module Rack
 	end
 end
 
-load 'crtodo\_app.rb'
+load 'crtodo_app.rb'
 
 builder = Rack::Builder.new do
 	map '/' do
-		run MySinatraApp.new
+		run CRToDoApp.new
 	end
 end
 

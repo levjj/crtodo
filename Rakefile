@@ -14,7 +14,7 @@ TEST_FILES = FileList.new('spec/*_spec.rb')
 desc "Runs CRToDo server with built-in webserver"
 task :run do |t|
 	ARGV.shift()
-	exec "ruby -Ilib crtodo.rb #{ARGV.join(' ')}"
+	exec "ruby -Ilib runlocal #{ARGV.join(' ')}"
 end
 
 Spec::Rake::SpecTask.new('spec') do |spec|

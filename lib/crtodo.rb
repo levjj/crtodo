@@ -36,8 +36,8 @@ module CRToDo
 			[@done ? 1 : 0, @name]
 		end
 
-		def to_json
-			{ :name => self.name, :done => @done}.to_json
+		def to_json(*a)
+			{ :name => self.name, :done => @done}.to_json(*a)
 		end
 	end
 
@@ -50,7 +50,7 @@ module CRToDo
 			@entries = []
 			@loaded = false
 		end
-		
+
 		def loaded?
 			@loaded
 		end
@@ -77,11 +77,12 @@ module CRToDo
 			save_list
 		end
 
-		def add_todo(name)
+		def add_todo(name, position = nil)
 			write_op do
+				position ||= @entries.size
 				todo = ToDo.new(name)
 				todo.list = self
-				@entries << todo
+				@entries.insert(position, todo)
 			end
 		end
 
@@ -129,8 +130,8 @@ module CRToDo
 			end
 		end
 
-		def to_json
-			(@entries.map {|entry| entry.name}).to_json
+		def to_json(*a)
+			entries.to_json(*a)
 		end
 	end
 
@@ -164,8 +165,8 @@ module CRToDo
 			end
 		end
 
-		def to_json
-			@lists.keys.to_json
+		def to_json(*a)
+			@lists.keys.to_json(*a)
 		end
 	end
 end

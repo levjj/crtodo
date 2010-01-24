@@ -2,16 +2,32 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<title>Backup control</title>
+<script type="text/javascript" src="jquery.js"></script>
+<title>CRToDo web interface</title>
 <link rel="stylesheet" type="text/css" href="/style.css" media="screen" />
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript">
+google.load("jquery", "1.4");
+google.setOnLoadCallback(function() {
+  $.getJSON("/", function(data){
+    $("#nav").empty();
+    $.each(data.items, function(i,item){
+      $("#images").append(
+        $("<li/>").append(
+          $("<a/>").attr("href", item)
+        );
+    });
+  });
+}
+</script>
 </head>
 <body>
 <div id="header">
-<h1>Backup control</h1>
+<h1>CRToDo web interface</h1>
  <div id="menu">
   <ul id="nav">
-          <% @entries.each do |f| %>
-            <li><a href="/<%= f %>"><%= f %></a></li>
+          <% @listnames.each do |list| %>
+            <li><a href="/<%= list %>"><%= list %></a></li>
           <% end %>
   </ul>
  </div>
@@ -19,7 +35,7 @@
 <div id="content">
 <div id="left">
 <p>
-  Select a backup from the list above.
+  Select a ToDo list from the links above.
 </p>
 </div>
 	
