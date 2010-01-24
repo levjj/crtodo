@@ -24,9 +24,14 @@ describe CRToDo::ToDo do
 		@imported_todo.done?.should == true
 	end
 
-	it "should be serialized to CSV" do
+	it "should be serialized to arrays" do
 		@new_todo.to_array.should ==  [0, TODO1]
 		@imported_todo.to_array.should ==  [1, TODO2]
+	end
+
+	it "should be serialized to JSON" do
+		@new_todo.to_json.should ==  '{"name":"%s","done":false}' % TODO1
+		@imported_todo.to_json.should ==  '{"name":"%s","done":true}' % TODO2
 	end
 
 	it "should be done after finishing it" do
@@ -112,12 +117,18 @@ describe CRToDo::ToDoList do
 		entry2.name.should == TODO2
 		entry2.done?.should == true
 	end
+
+	it "should be serialized to JSON" do
+		@todolist.to_json.should ==  '[]'
+		@todolist.add_todo TODO1
+		@todolist.to_json.should ==  '["%s"]' % TODO1
+	end
 end
 
-describe CRToDo::ToDoApp do
+describe CRToDo::ToDoDB do
 	before(:each) do
 		@tempdir = Pathname.new(Dir.tmpdir) + rand(1048576).to_s
-		@todoapp = CRToDo::ToDoApp.new @tempdir.to_s
+		@tododb = CRToDo::ToDoDB.new @tempdir.to_s
 	end
 
 	after(:each) do
@@ -125,14 +136,14 @@ describe CRToDo::ToDoApp do
 	end
 	
 	it "should have no lists after creation" do
-		@todoapp.lists.empty?.should == true
+		@tododb.lists.empty?.should == true
 		@tempdir.children.empty?.should == true
 	end
 
 	it "should be possible to add an empty todo list" do
-		@todoapp.add_list LIST
-		@todoapp.lists.size.should == 1
-		list = @todoapp.lists[LIST]
+		@tododb.add_list LIST
+		@tododb.lists.size.should == 1
+		list = @tododb.lists[LIST]
 		list.name.should == LIST
 		list.entries.empty?.should == true
 		@tempdir.children.size.should == 1
@@ -142,9 +153,9 @@ describe CRToDo::ToDoApp do
 	end
 
 	it "should be possible to add a todo list with one entry" do
-		@todoapp.add_list LIST
-		@todoapp.lists.size.should == 1
-		list = @todoapp.lists[LIST]
+		@tododb.add_list LIST
+		@tododb.lists.size.should == 1
+		list = @tododb.lists[LIST]
 		list.add_todo TODO1
 		list.name.should == LIST
 		list.entries.size.should == 1
@@ -155,10 +166,16 @@ describe CRToDo::ToDoApp do
 	end
 
 	it "should be possible to delete todo entries" do
-		@todoapp.add_list LIST
-		@todoapp.lists.size.should == 1
-		@todoapp.delete_list LIST
-		@todoapp.lists.empty?.should == true
+		@tododb.add_list LIST
+		@tododb.lists.size.should == 1
+		@tododb.delete_list LIST
+		@tododb.lists.empty?.should == true
 		@tempdir.children.empty?.should == true
+	end
+
+	it "should be serialized to JSON" do
+		@tododb.to_json.should ==  '[]'
+		@tododb.add_list LIST
+		@tododb.to_json.should ==  '["%s"]' % LIST
 	end
 end

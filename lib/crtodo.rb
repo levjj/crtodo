@@ -1,5 +1,6 @@
 require 'pathname'
 require 'csv'
+require 'json'
 
 module CRToDo
 	class ToDo
@@ -34,6 +35,10 @@ module CRToDo
 		def to_array
 			[@done ? 1 : 0, @name]
 		end
+
+		def to_json
+			{ :name => self.name, :done => @done}.to_json
+		end
 	end
 
 	class ToDoList
@@ -54,7 +59,7 @@ module CRToDo
 			File.open(path, 'w') {} unless File.exist? path
 			@path = path
 		end
-		
+
 		def ensure_loaded
 			if !@loaded then
 				load_list
@@ -123,9 +128,13 @@ module CRToDo
 				end
 			end
 		end
+
+		def to_json
+			(@entries.map {|entry| entry.name}).to_json
+		end
 	end
 
-	class ToDoApp
+	class ToDoDB
 		attr_reader :lists
 
 		def initialize(path = nil)
@@ -153,6 +162,10 @@ module CRToDo
 				list.path = listpath.to_s
 				@lists[list.name] = list
 			end
+		end
+
+		def to_json
+			@lists.keys.to_json
 		end
 	end
 end
