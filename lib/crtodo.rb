@@ -68,8 +68,8 @@ module CRToDo
 		end
 
 		def path=(path)
-			File.open(path, 'w') {} unless File.exist? path
 			@path = path
+			File.open(@path, 'w') {} unless File.exist? @path
 		end
 
 		def ensure_loaded
@@ -179,7 +179,7 @@ module CRToDo
 		def load_lists
 			@path.children(false).each do |listpath|
 				list = ToDoList.new(listpath.basename.to_s.chomp(".csv"))
-				list.path = listpath.to_s
+				list.path = (@path + listpath.to_s).to_s
 				@lists[list.name] = list
 			end
 		end
