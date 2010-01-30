@@ -20,6 +20,7 @@ end
 Spec::Rake::SpecTask.new('spec') do |spec|
 	spec.spec_files = TEST_FILES
 	spec.rcov = false
+	spec.ruby_opts = ["-Ilib"]
 	spec.spec_opts = ["--format", "specdoc", "--color", "--backtrace"]
 end
 

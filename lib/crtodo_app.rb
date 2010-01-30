@@ -10,23 +10,23 @@ module CRToDo
 			@listnames = @model.lists.keys
 		end
 
-		get '/www' do
+		get '/' do
 			erb :index
 		end
 
-		get '/' do
+		get '/api/' do
 			@model.to_json
 		end
 
-		post '/' do
+		post '/api/' do
 			@model.add_list params[:list]
 		end
 
-		get '/:name' do
+		get '/api/:name' do
 			@model.lists[params[:name]].to_json
 		end
 
-		post '/:name' do
+		post '/api/:name' do
 			list = @model.lists[params[:name]]
 			if params.key? :pos then
 				list.add_todo(params[:todo], params[:pos])
@@ -35,7 +35,7 @@ module CRToDo
 			end
 		end
 
-		put '/:name' do
+		put '/api/:name' do
 			if params.key? :newname then
 				@model.rename_list(params[:name], params[:newname])
 			else
@@ -43,19 +43,19 @@ module CRToDo
 			end
 		end
 
-		delete '/:name' do
+		delete '/api/:name' do
 			@model.delete_list params[:name]
 		end
 
-		get '/:name/:todo' do
+		get '/api/:name/:todo' do
 			@model.lists[params[:name]].entries[params[:todo]].to_json
 		end
 
-		put '/:name/:todo' do
+		put '/api/:name/:todo' do
 			@model.lists[params[:name]].entries[params[:todo]].finish
 		end
 
-		delete '/:name/:todo' do
+		delete '/api/:name/:todo' do
 			@model.lists[params[:name]].delete_at params[:todo]
 		end
 	end

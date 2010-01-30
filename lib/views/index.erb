@@ -2,10 +2,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<script type="text/javascript" src="jquery.js"></script>
 <title>CRToDo web interface</title>
-<link rel="stylesheet" type="text/css" href="/style.css" media="screen" />
-<link rel="stylesheet" type="text/css" href="/jquery-ui-1.7.2.custom.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.7.2.custom.css" media="screen" />
 <script type="text/javascript" src="http://www.google.com/jsapi"></script>
 <script type="text/javascript">
 google.load("jquery", "1.4");
@@ -17,23 +16,33 @@ function S4() {
 
 google.setOnLoadCallback(function() {
   var $tabs = $("#main").tabs();
-  //$tabs.bind("tabsselect", function(event, ui) {
-  //  $tabs.tabs("option", "selected");
-  //});
+  $tabs.bind("tabsselect", function(event, ui) {
+    if (ui.index < $tabs.tabs("length") - 1) {
+      $.getJSON("api/" + $("b", ui.panel).html(), function(data) {
+        $(ui.panel).html("");
+        $.each(data, function(i, item) {
+          $(ui.panel).append(
+            item.done
+            ? $("<p>" + item.name + "</p>")
+            : $("<p><i>" + item.name + "</i></p>"));
+        });
+      });
+    }
+  });
   function reload() {
-    $.getJSON("/", function(data) {
+    $.getJSON("api/", function(data) {
       while ($tabs.tabs("length") > 0) {
         $tabs.tabs("remove", 0);
       }
       $.each(data, function(i, item) {
         var listid = "#" + S4() + S4() + S4();
         $tabs.tabs("add", listid, item);
-        $(listid).html("Loading " + item + "...");
+        $(listid).html("Loading <b>" + item + "</b> ...");
       });
       $tabs.tabs("add", "#add", "<b>Add new List</b>");
       $("#add").html("New Name: <input type=\"text\" name=\"name\" /><button>Add</button>");
       $("#add button").click(function() {
-        $.post('/', {list: $("#add input").val()}, function(data) {
+        $.post("api/", {list: $("#add input").val()}, function(data) {
           reload();
           $tabs.tabs("select", $tabs.tabs("length") - 2);
         });
