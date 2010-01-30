@@ -16,11 +16,10 @@ function S4() {
 }
 
 google.setOnLoadCallback(function() {
-  var $tabs = $("#main").tabs(/*{
-    add: function(event, ui) {
-      $tabs.tabs('select', '#' + ui.panel.id);
-    }
-  }*/);
+  var $tabs = $("#main").tabs();
+  //$tabs.bind("tabsselect", function(event, ui) {
+  //  $tabs.tabs("option", "selected");
+  //});
   function reload() {
     $.getJSON("/", function(data) {
       while ($tabs.tabs("length") > 0) {
@@ -29,11 +28,12 @@ google.setOnLoadCallback(function() {
       $.each(data, function(i, item) {
         var listid = "#" + S4() + S4() + S4();
         $tabs.tabs("add", listid, item);
-        $(listid).html("Hallo Welt von Item " + item);
+        $(listid).html("Loading " + item + "...");
       });
-      $tabs.tabs("add", "#add", "<b>Add new</b>");
-      $("#main").find("a[href='#add']").click(function() {
-        $.post('/', {list: "New List"}, function(data) {
+      $tabs.tabs("add", "#add", "<b>Add new List</b>");
+      $("#add").html("New Name: <input type=\"text\" name=\"name\" /><button>Add</button>");
+      $("#add button").click(function() {
+        $.post('/', {list: $("#add input").val()}, function(data) {
           reload();
           $tabs.tabs("select", $tabs.tabs("length") - 2);
         });
