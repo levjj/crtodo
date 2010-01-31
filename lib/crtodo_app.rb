@@ -56,6 +56,7 @@ module CRToDo
 				@model.lists[name].
 					move_todo(todo.to_i, params["newindex"].to_i)
 			else
+				puts "start finishing"
 				@model.lists[name].entries[todo.to_i].finish
 			end
 		end

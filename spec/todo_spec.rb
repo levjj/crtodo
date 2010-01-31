@@ -161,9 +161,11 @@ describe CRToDo::ToDoList do
 		entry1 = @todolist.entries[0]
 		entry1.name.should == TODO1
 		entry1.done?.should == false
+		entry1.list.nil?.should == false
 		entry2 = @todolist.entries[1]
 		entry2.name.should == TODO2
 		entry2.done?.should == true
+		entry1.nil?.should == false
 	end
 
 	it "serializes to JSON" do

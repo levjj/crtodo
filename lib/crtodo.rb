@@ -6,7 +6,7 @@ require 'fileutils'
 module CRToDo
 	class ToDo
 		attr_reader :name
-		attr_writer :list
+		attr_accessor :list
 
 		def initialize(name)
 			super()
@@ -20,7 +20,7 @@ module CRToDo
 				@list.save_list
 			end
 		end
-		
+
 		def done?
 			@done
 		end
@@ -135,7 +135,9 @@ module CRToDo
 
 		def load_list
 			CSV.foreach @path do |row|
-				@entries << ToDo.from_array(row)
+				todo = ToDo.from_array(row)
+				todo.list = self
+				@entries << todo
 			end
 			@loaded = true
 		end

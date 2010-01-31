@@ -17,14 +17,26 @@ function UID() {
 $(document).ready(function() {
   var tabs = $('#main').tabs();
 
-  function addtodo(item) {
+  function make_todo(item, list, index) {
     var uid = UID();
     return $('<li class="ui-state-default ui-corner-all" />')
       .append($('<label for="' + uid + '">' + item.name + '</label>'))
       .append($('<input id="' + uid
         + '" ' + (item.done ? 'checked="checked" ' : '')
-        + 'type="checkbox" />'));
+        + 'type="checkbox" />').click(function() {
+          $.post('api/' + list + '/' + index, {_method: 'put'});
+      }));
   }
+
+  function add_todo(todolist, addpanel, list) {
+    var name = $('#' + addpanel + ' input').val();
+    $.post('api/' + list, {todo: name}, function() {
+      todolist.append(
+        make_todo({name: name, done: false}, list, $("li", todolist).size()));
+    });
+    $('#' + addpanel + ' input').val('');
+  }
+
   tabs.bind('tabsselect', function(event, ui) {
     if (ui.index < tabs.tabs('length') - 1) {
       $.getJSON('api/' + $(ui.tab).attr('title'), function(data) {
@@ -43,18 +55,21 @@ $(document).ready(function() {
           .disableSelection()
           .appendTo($(ui.panel));
         $.each(data, function(i, item) {
-          todolist.append(addtodo(item));
+          todolist.append(make_todo(item, $(ui.tab).attr('title'), i));
         });
         var addpanel = UID();
         $('<div id=' + addpanel + '/>')
           .html('<input type="text" class="todoinput" />' +
                 '<button>Add</button>')
           .appendTo($(ui.panel));
+        $('#' + addpanel + ' input').keypress(function(event) {
+          if (event.keyCode == '13') {
+            event.preventDefault();
+            add_todo(todolist, addpanel, $(ui.tab).attr('title'));
+          }
+        });
         $('#' + addpanel + ' button').button().click(function() {
-          var name = $('#' + addpanel + ' input').val();
-          $.post('api/' + $(ui.tab).attr('title'), {todo: name}, function() {
-            todolist.append(addtodo({name: name, done: false}));
-          });
+          add_todo(todolist, addpanel, $(ui.tab).attr('title'));
         });
       });
     }
