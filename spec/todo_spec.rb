@@ -9,35 +9,39 @@ TODO3   = "Making homework"
 
 CSVFILE = File.join(File.dirname(__FILE__), "testlist.csv")
 
-JSONTODO = '{"name":"%s","done":%s}'
-
 describe CRToDo::ToDo do
 	before(:each) do
 		@new_todo = CRToDo::ToDo.new(TODO1)
 		@imported_todo = CRToDo::ToDo.from_array([1, TODO2])
 	end
 
-	it "should store the name" do
+	it "stores the name" do
 		@new_todo.name.should == TODO1
 		@imported_todo.name.should == TODO2
 	end
 
-	it "should be open after creation" do
+	it "is open after creation" do
 		@new_todo.done?.should == false
 		@imported_todo.done?.should == true
 	end
 
-	it "should be serialized to arrays" do
+	it "serializes to an array" do
 		@new_todo.to_array.should ==  [0, TODO1]
 		@imported_todo.to_array.should ==  [1, TODO2]
 	end
 
-	it "should be serialized to JSON" do
-		@new_todo.to_json.should ==  JSONTODO % [TODO1, false]
-		@imported_todo.to_json.should ==  JSONTODO % [TODO2, true]
+	it "serializes to JSON" do
+		json = JSON.parse @new_todo.to_json
+		json.size.should == 2
+		json["name"].should ==  TODO1
+		json["done"].should == false
+		json = JSON.parse @imported_todo.to_json
+		json.size.should == 2
+		json["name"].should ==  TODO2
+		json["done"].should == true
 	end
 
-	it "should be done after finishing it" do
+	it "is done after finishing it" do
 		@new_todo.finish
 		@new_todo.done?.should == true
 	end
@@ -54,18 +58,18 @@ describe CRToDo::ToDoList do
 		@tempfile.close
 	end
 
-	it "should store the name" do
+	it "stores the name" do
 		@todolist.name.should == LIST
 	end
 
-	it "should have no entries after creation" do
+	it "has no entries after creation" do
 		@todolist.loaded?.should == false
 		@todolist.entries.empty?.should == true
 		@todolist.loaded?.should == true
 		IO.read(@tempfile.path).should ==  ""
 	end
 
-	it "should be possible to add todo entries" do
+	it "stores newly added todo entries" do
 		@todolist.loaded?.should == false
 		@todolist.add_todo TODO1
 		@todolist.loaded?.should == true
@@ -78,7 +82,7 @@ describe CRToDo::ToDoList do
 		IO.read(@tempfile.path).should ==  "0,%s\n" % [TODO1]
 	end
 
-	it "should be possible to insert todo entries" do
+	it "supports the insertion of todo entries" do
 		@todolist.loaded?.should == false
 		@todolist.add_todo TODO1
 		@todolist.add_todo TODO3
@@ -96,7 +100,7 @@ describe CRToDo::ToDoList do
 				"0,%s\n0,%s\n0,%s\n" % [TODO1, TODO2, TODO3]
 	end
 
-	it "should be possible to delete todo entries" do
+	it "supports the deletion of todo entries" do
 		@todolist.loaded?.should == false
 		@todolist.add_todo TODO1
 		@todolist.delete_at 0
@@ -106,7 +110,7 @@ describe CRToDo::ToDoList do
 		IO.read(@tempfile.path).should ==  ""
 	end
 
-	it "should be done after finishing all entries" do
+	it "is done after finishing all entries" do
 		@todolist.add_todo TODO1
 		entry = @todolist.entries[0]
 		entry.finish
@@ -115,7 +119,7 @@ describe CRToDo::ToDoList do
 		IO.read(@tempfile.path).should ==  "1,%s\n" % [TODO1]
 	end
 
-	it "should be done after finishing it" do
+	it "is done after finishing it" do
 		@todolist.add_todo TODO1
 		entry = @todolist.entries[0]
 		@todolist.finish
@@ -124,13 +128,14 @@ describe CRToDo::ToDoList do
 		IO.read(@tempfile.path).should ==  "1,%s\n" % [TODO1]
 	end
 
-	it "should be possible to import entries" do
+	it "imports entries from the filesystem" do
 		@todolist.loaded?.should == false
 		@todolist.path = Pathname.new(CSVFILE)
 		@todolist.loaded?.should == false
 		@todolist.done?.should == false
 		@todolist.loaded?.should == true
 		@todolist.entries.empty?.should == false
+		@todolist.entries.size.should == 2
 		entry1 = @todolist.entries[0]
 		entry1.name.should == TODO1
 		entry1.done?.should == false
@@ -139,10 +144,14 @@ describe CRToDo::ToDoList do
 		entry2.done?.should == true
 	end
 
-	it "should be serialized to JSON" do
+	it "serializes to JSON" do
 		@todolist.to_json.should ==  '[]'
 		@todolist.add_todo TODO1
-		@todolist.to_json.should ==  '['+ (JSONTODO % [TODO1, false]) + ']'
+		json = JSON.parse @todolist.to_json
+		json.size.should == 1
+		json[0].size.should == 2
+		json[0]["name"].should == TODO1
+		json[0]["done"].should == false
 	end
 end
 
@@ -156,12 +165,12 @@ describe CRToDo::ToDoDB do
 		@tempdir.rmtree
 	end
 	
-	it "should have no lists after creation" do
+	it "has no lists after creation" do
 		@tododb.lists.empty?.should == true
 		@tempdir.children.empty?.should == true
 	end
 
-	it "should be possible to add an empty todo list" do
+	it "stores newly created empty todo lists" do
 		@tododb.add_list LIST
 		@tododb.lists.size.should == 1
 		list = @tododb.lists[LIST]
@@ -173,7 +182,7 @@ describe CRToDo::ToDoDB do
 		listfile.read.should ==  ""
 	end
 
-	it "should be possible to add a todo list with one entry" do
+	it "stores newly created todolists with one entry" do
 		@tododb.add_list LIST
 		@tododb.lists.size.should == 1
 		list = @tododb.lists[LIST]
@@ -186,7 +195,7 @@ describe CRToDo::ToDoDB do
 		listfile.read.should == "0,%s\n" % [TODO1]
 	end
 
-	it "should be possible to rename a todo list" do
+	it "supports renaming of todo lists" do
 		@tododb.add_list LIST
 		@tododb.lists.size.should == 1
 		@tododb.lists.values[0].name.should == LIST
@@ -199,7 +208,7 @@ describe CRToDo::ToDoDB do
 		@tempdir.children[0].should == @tempdir + (LIST + "2.csv")
 	end
 
-	it "should be possible to delete todo lists" do
+	it "supports deletion of todo lists" do
 		@tododb.add_list LIST
 		@tododb.lists.size.should == 1
 		@tododb.delete_list LIST
@@ -207,7 +216,7 @@ describe CRToDo::ToDoDB do
 		@tempdir.children.empty?.should == true
 	end
 
-	it "should be serialized to JSON" do
+	it "serializes to JSON" do
 		@tododb.to_json.should ==  '[]'
 		@tododb.add_list LIST
 		@tododb.to_json.should ==  '["%s"]' % LIST

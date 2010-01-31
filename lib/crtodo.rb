@@ -126,10 +126,8 @@ module CRToDo
 		end
 
 		def load_list
-			CSV.open(@path, 'r') do |reader|
-				reader.each do |row|
-					@entries << ToDo.from_array(row)
-				end
+			CSV.foreach @path do |row|
+				@entries << ToDo.from_array(row)
 			end
 			@loaded = true
 		end
