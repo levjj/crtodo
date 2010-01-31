@@ -3,50 +3,86 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>CRToDo web interface</title>
-<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
-<link rel="stylesheet" type="text/css" href="jquery-ui-1.7.2.custom.css" media="screen" />
-<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="css/jquery-ui-1.8rc1.custom.css" media="screen" />
+<script type="text/javascript" src="js/jquery-1.4.1.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui-1.8rc1.custom.min.js"></script>
 <script type="text/javascript">
-google.load("jquery", "1.4");
-google.load("jqueryui", "1.7.2");
-
 function S4() {
-   return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+  return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
 }
+function UID() {
+  return 'z' + S4() + S4() + S4();
+}
+$(document).ready(function() {
+  var tabs = $('#main').tabs();
 
-google.setOnLoadCallback(function() {
-  var $tabs = $("#main").tabs();
-  $tabs.bind("tabsselect", function(event, ui) {
-    if (ui.index < $tabs.tabs("length") - 1) {
-      $.getJSON("api/" + $("b", ui.panel).html(), function(data) {
-        $(ui.panel).html("");
+  function addtodo(item) {
+    var uid = UID();
+    return $('<li class="ui-state-default ui-corner-all" />')
+      .append($('<label for="' + uid + '">' + item.name + '</label>'))
+      .append($('<input id="' + uid
+        + '" ' + (item.done ? 'checked="checked" ' : '')
+        + 'type="checkbox" />'));
+  }
+  tabs.bind('tabsselect', function(event, ui) {
+    if (ui.index < tabs.tabs('length') - 1) {
+      $.getJSON('api/' + $(ui.tab).attr('title'), function(data) {
+        var dragged_item;
+        $(ui.panel).html('');
+        var todolist = $('<ul class="todolist" />')
+          .sortable({
+            start: function(event, uis) {
+              dragged_item = $("li", todolist).index(uis.item);
+            },
+            stop: function(event, uit) {
+              $.post('api/' + $(ui.tab).attr('title') + '/' + dragged_item,
+                     {newindex: $("li", todolist).index(uit.item), _method: 'put'});
+            }
+          })
+          .disableSelection()
+          .appendTo($(ui.panel));
         $.each(data, function(i, item) {
-          $(ui.panel).append(
-            item.done
-            ? $("<p>" + item.name + "</p>")
-            : $("<p><i>" + item.name + "</i></p>"));
+          todolist.append(addtodo(item));
+        });
+        var addpanel = UID();
+        $('<div id=' + addpanel + '/>')
+          .html('<input type="text" class="todoinput" />' +
+                '<button>Add</button>')
+          .appendTo($(ui.panel));
+        $('#' + addpanel + ' button').button().click(function() {
+          var name = $('#' + addpanel + ' input').val();
+          $.post('api/' + $(ui.tab).attr('title'), {todo: name}, function() {
+            todolist.append(addtodo({name: name, done: false}));
+          });
         });
       });
     }
   });
   function reload() {
-    $.getJSON("api/", function(data) {
-      while ($tabs.tabs("length") > 0) {
-        $tabs.tabs("remove", 0);
+    $.getJSON('api/', function(data) {
+      while (tabs.tabs('length') > 0) {
+        tabs.tabs('remove', 0);
       }
       $.each(data, function(i, item) {
-        var listid = "#" + S4() + S4() + S4();
-        $tabs.tabs("add", listid, item);
-        $(listid).html("Loading <b>" + item + "</b> ...");
+        var listid = '#' + UID();
+        tabs.tabs('add', listid, item);
+        $(listid).html('Loading <b>' + item + '</b> ...');
+        $('a[href="' + listid + '"]').attr('title', item);
       });
-      $tabs.tabs("add", "#add", "<b>Add new List</b>");
-      $("#add").html("New Name: <input type=\"text\" name=\"name\" /><button>Add</button>");
-      $("#add button").click(function() {
-        $.post("api/", {list: $("#add input").val()}, function(data) {
+      tabs.tabs('add', '#add', '<b>New List</b>');
+      $('#add').html('New Name: <input type="text" class="todoinput" />' +
+                     '<button>Add</button>');
+      $('#add button').button().click(function() {
+        $.post('api/', {list: $('#add input').val()}, function(data) {
           reload();
-          $tabs.tabs("select", $tabs.tabs("length") - 2);
+          //tabs.tabs('select', $('a[title="' + data + '"]').attr('href'));
+          var link = $('a[title="' + data + '"]');
+          var myid = link.attr('href');
+          tabs.tabs('option', 'selected', $('a[title="' + data + '"]').attr('href'));
         });
       });
+      tabs.tabs('select', -1);
     });
   }
   reload();

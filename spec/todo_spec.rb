@@ -2,7 +2,9 @@ require 'rubygems'
 require 'crtodo'
 require 'tempfile'
 
-LIST    = "Test List"
+LIST1   = "Test List"
+LIST2   = "Second List"
+
 TODO1   = "Go shopping"
 TODO2   = "Clean the car"
 TODO3   = "Making homework"
@@ -50,7 +52,7 @@ end
 describe CRToDo::ToDoList do
 	before(:each) do
 		@tempfile = Tempfile.open("testlist")
-		@todolist = CRToDo::ToDoList.new LIST
+		@todolist = CRToDo::ToDoList.new LIST1
 		@todolist.path = @tempfile.path
 	end
 
@@ -59,7 +61,7 @@ describe CRToDo::ToDoList do
 	end
 
 	it "stores the name" do
-		@todolist.name.should == LIST
+		@todolist.name.should == LIST1
 	end
 
 	it "has no entries after creation" do
@@ -98,6 +100,26 @@ describe CRToDo::ToDoList do
 		@tempfile.flush
 		IO.read(@tempfile.path).should ==
 				"0,%s\n0,%s\n0,%s\n" % [TODO1, TODO2, TODO3]
+	end
+
+	it "supports moving todo entries" do
+		@todolist.loaded?.should == false
+		@todolist.add_todo TODO1
+		@todolist.add_todo TODO2
+		@todolist.loaded?.should == true
+		@todolist.entries.size.should == 2
+		@todolist.entries[0].name.should == TODO1
+		@todolist.entries[1].name.should == TODO2
+		@tempfile.flush
+		IO.read(@tempfile.path).should ==
+				"0,%s\n0,%s\n" % [TODO1, TODO2]
+		@todolist.move_todo(1, 0)
+		@todolist.entries.size.should == 2
+		@todolist.entries[0].name.should == TODO2
+		@todolist.entries[1].name.should == TODO1
+		@tempfile.flush
+		IO.read(@tempfile.path).should ==
+				"0,%s\n0,%s\n" % [TODO2, TODO1]
 	end
 
 	it "supports the deletion of todo entries" do
@@ -153,6 +175,17 @@ describe CRToDo::ToDoList do
 		json[0]["name"].should == TODO1
 		json[0]["done"].should == false
 	end
+
+	it "serializes multiple entries in the order of insertion to JSON" do
+		@todolist.add_todo TODO3
+		@todolist.add_todo TODO1
+		@todolist.add_todo TODO2
+		json = JSON.parse @todolist.to_json
+		json.size.should == 3
+		json[0]["name"].should == TODO3
+		json[1]["name"].should == TODO1
+		json[2]["name"].should == TODO2
+	end
 end
 
 describe CRToDo::ToDoDB do
@@ -171,54 +204,63 @@ describe CRToDo::ToDoDB do
 	end
 
 	it "stores newly created empty todo lists" do
-		@tododb.add_list LIST
+		@tododb.add_list LIST1
 		@tododb.lists.size.should == 1
-		list = @tododb.lists[LIST]
-		list.name.should == LIST
+		list = @tododb.lists[LIST1]
+		list.name.should == LIST1
 		list.entries.empty?.should == true
 		@tempdir.children.size.should == 1
 		listfile = @tempdir.children[0]
-		listfile.should == @tempdir + (LIST + ".csv")
+		listfile.should == @tempdir + (LIST1 + ".csv")
 		listfile.read.should ==  ""
 	end
 
 	it "stores newly created todolists with one entry" do
-		@tododb.add_list LIST
+		@tododb.add_list LIST1
 		@tododb.lists.size.should == 1
-		list = @tododb.lists[LIST]
+		list = @tododb.lists[LIST1]
 		list.add_todo TODO1
-		list.name.should == LIST
+		list.name.should == LIST1
 		list.entries.size.should == 1
 		@tempdir.children.size.should == 1
 		listfile = @tempdir.children[0]
-		listfile.should == @tempdir + (LIST + ".csv")
+		listfile.should == @tempdir + (LIST1 + ".csv")
 		listfile.read.should == "0,%s\n" % [TODO1]
 	end
 
 	it "supports renaming of todo lists" do
-		@tododb.add_list LIST
+		@tododb.add_list LIST1
 		@tododb.lists.size.should == 1
-		@tododb.lists.values[0].name.should == LIST
+		@tododb.lists.values[0].name.should == LIST1
 		@tempdir.children.size.should == 1
-		@tempdir.children[0].should == @tempdir + (LIST + ".csv")
-		@tododb.rename_list(LIST, LIST + "2")
+		@tempdir.children[0].should == @tempdir + (LIST1 + ".csv")
+		@tododb.rename_list(LIST1, LIST1 + "2")
 		@tododb.lists.size.should == 1
-		@tododb.lists.values[0].name.should == LIST + "2"
+		@tododb.lists.values[0].name.should == LIST1 + "2"
 		@tempdir.children.size.should == 1
-		@tempdir.children[0].should == @tempdir + (LIST + "2.csv")
+		@tempdir.children[0].should == @tempdir + (LIST1 + "2.csv")
 	end
 
 	it "supports deletion of todo lists" do
-		@tododb.add_list LIST
+		@tododb.add_list LIST1
 		@tododb.lists.size.should == 1
-		@tododb.delete_list LIST
+		@tododb.delete_list LIST1
 		@tododb.lists.empty?.should == true
 		@tempdir.children.empty?.should == true
 	end
 
 	it "serializes to JSON" do
 		@tododb.to_json.should ==  '[]'
-		@tododb.add_list LIST
-		@tododb.to_json.should ==  '["%s"]' % LIST
+		@tododb.add_list LIST1
+		@tododb.to_json.should ==  '["%s"]' % LIST1
+	end
+
+	it "serializes multiple lists in alphabetic order to JSON" do
+		@tododb.add_list LIST1
+		@tododb.add_list LIST2
+		json = JSON.parse @tododb.to_json
+		json.size.should == 2
+		json[0].should == LIST2
+		json[1].should == LIST1
 	end
 end

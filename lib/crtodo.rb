@@ -98,6 +98,14 @@ module CRToDo
 			end
 		end
 
+		def move_todo(from_index, to_index)
+			write_op do
+				todo = @entries[from_index]
+				@entries.delete_at from_index
+				@entries.insert(to_index, todo)
+			end
+		end
+
 		def delete
 			File.delete @path
 		end
@@ -160,6 +168,7 @@ module CRToDo
 			list = ToDoList.new(name)
 			list.path = (@path + (name + ".csv")).to_s
 			@lists[list.name] = list
+			name
 		end
 
 		def delete_list(name)
@@ -183,7 +192,7 @@ module CRToDo
 		end
 
 		def to_json(*a)
-			@lists.keys.to_json(*a)
+			@lists.keys.sort.to_json(*a)
 		end
 	end
 end

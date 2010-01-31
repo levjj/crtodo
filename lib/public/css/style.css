@@ -23,7 +23,7 @@ h2 {
 #header {
 	width:100%;
 	overflow:hidden;
-	background: #333;
+	background: #555;
 }
 
 #header h1 {
@@ -36,4 +36,29 @@ h2 {
 	margin-left: 10px;
 	margin-right: 10px;
 	margin-top: 10px;
+}
+
+ul.todolist li {
+	list-style-type: none;
+	margin: 6px;
+	padding: 5px;
+}
+
+ul.todolist {
+	padding: 0;
+	margin: 0;
+	width: 400px;
+}
+
+ul.todolist li input {
+	float: right;
+}
+
+ul.todolist li span {
+	position: absolute;
+}
+
+.todoinput {
+	width: 320px;
+	margin-right: 10px;
 }
