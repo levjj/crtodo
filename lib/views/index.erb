@@ -84,7 +84,7 @@ $(document).ready(function() {
             add_todo(todolist, addpanel, $(ui.tab).attr('title'));
           }
         });
-        $('#' + addpanel + ' button').button().click(function() {
+        $('#' + addpanel + ' button').click(function() {
           add_todo(todolist, addpanel, $(ui.tab).attr('title'));
         });
         $('<div class="managelist" />')
@@ -127,7 +127,7 @@ $(document).ready(function() {
       tabs.tabs('add', '#add', '<b>New List</b>');
       $('#add').html('New Name: <input type="text" class="todoinput" />' +
                      '<button>Add</button>');
-      $('#add button').button().click(function() {
+      $('#add button').click(function() {
         $.post('api/', {list: $('#add input').val()}, function(data) {
           reload();
           //tabs.tabs('select', $('a[title="' + data + '"]').attr('href'));
