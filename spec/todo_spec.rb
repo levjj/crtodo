@@ -73,7 +73,8 @@ describe CRToDo::ToDoList do
 
 	it "stores newly added todo entries" do
 		@todolist.loaded?.should == false
-		@todolist.add_todo TODO1
+		pos = @todolist.add_todo TODO1
+		pos.should == 0
 		@todolist.loaded?.should == true
 		@todolist.done?.should == false
 		@todolist.entries.empty?.should == false
@@ -92,7 +93,8 @@ describe CRToDo::ToDoList do
 		@todolist.entries.size.should == 2
 		@todolist.entries[0].name.should == TODO1
 		@todolist.entries[1].name.should == TODO3
-		@todolist.add_todo(TODO2, 1)
+		pos = @todolist.add_todo(TODO2, 1)
+		pos.should == 1
 		@todolist.entries.size.should == 3
 		@todolist.entries[0].name.should == TODO1
 		@todolist.entries[1].name.should == TODO2
@@ -120,6 +122,13 @@ describe CRToDo::ToDoList do
 		@tempfile.flush
 		IO.read(@tempfile.path).should ==
 				"0,%s\n0,%s\n" % [TODO2, TODO1]
+	end
+
+	it "should ignore bad move operations" do
+		@todolist.move_todo(1, 0)
+		@todolist.entries.empty?.should == true
+		@tempfile.flush
+		IO.read(@tempfile.path).should == ""
 	end
 
 	it "supports the deletion of todo entries" do
@@ -206,7 +215,8 @@ describe CRToDo::ToDoDB do
 	end
 
 	it "stores newly created empty todo lists" do
-		@tododb.add_list LIST1
+		name = @tododb.add_list LIST1
+		name.should == LIST1
 		@tododb.lists.size.should == 1
 		list = @tododb.lists[LIST1]
 		list.name.should == LIST1

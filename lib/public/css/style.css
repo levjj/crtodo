@@ -38,7 +38,10 @@ h2 {
 	margin-top: 10px;
 }
 
-ul.todolist li {
+ul.todolist li,
+div.deltodo,
+div.managelist p,
+div.managelist a {
 	list-style-type: none;
 	margin: 6px;
 	padding: 5px;
@@ -54,11 +57,21 @@ ul.todolist li input {
 	float: right;
 }
 
-ul.todolist li span {
-	position: absolute;
+a.deltodo {
+	float: right;
+	font-weight: bolder;
+}
+
+div.deltodo {
+	width: 376px;
+}
+
+div.managelist {
+	width: 400px;
 }
 
 .todoinput {
-	width: 320px;
+	width: 314px;
+	margin-left: 6px;
 	margin-right: 10px;
 }

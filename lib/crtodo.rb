@@ -96,14 +96,17 @@ module CRToDo
 				todo.list = self
 				@entries.insert(position, todo)
 			end
+			return position
 		end
 
 		def move_todo(from_index, to_index)
 			write_op do
 				todo = @entries[from_index]
+				return if todo.nil?
 				@entries.delete_at from_index
 				@entries.insert(to_index, todo)
 			end
+			return to_index
 		end
 
 		def delete
@@ -114,17 +117,19 @@ module CRToDo
 			write_op do
 				@entries.delete_at index
 			end
+			return index
 		end
 
 		def finish
 			write_op do
 				@entries.each {|entry| entry.finish}
 			end
+			return self.name
 		end
 
 		def entries
 			ensure_loaded
-			@entries
+			return @entries
 		end
 
 		def done?
@@ -170,19 +175,21 @@ module CRToDo
 			list = ToDoList.new(name)
 			list.path = (@path + (name + ".csv")).to_s
 			@lists[list.name] = list
-			name
+			return name
 		end
 
 		def delete_list(name)
 			@lists[name].delete
 			@lists.delete(name)
+			return name
 		end
 
 		def rename_list(oldname, newname)
 			list = @lists[oldname]
 			@lists.delete(oldname)
-			list.name = newname;
+			list.name = newname
 			@lists[newname] = list
+			return newname
 		end
 
 		def load_lists

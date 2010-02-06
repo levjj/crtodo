@@ -21,6 +21,13 @@ $(document).ready(function() {
     var uid = UID();
     return $('<li class="ui-state-default ui-corner-all" />')
       .append($('<label for="' + uid + '">' + item.name + '</label>'))
+      .append(
+        $('<button>X</button>')
+          .click(function() {
+            $.post('api/' + list + '/' + index, {_method: 'delete'});
+          })
+          .hide()
+      )
       .append($('<input id="' + uid
         + '" ' + (item.done ? 'checked="checked" ' : '')
         + 'type="checkbox" />').click(function() {
@@ -32,7 +39,7 @@ $(document).ready(function() {
     var name = $('#' + addpanel + ' input').val();
     $.post('api/' + list, {todo: name}, function() {
       todolist.append(
-        make_todo({name: name, done: false}, list, $("li", todolist).size()));
+        make_todo({name: name, done: false}, list, $('li', todolist).size()));
     });
     $('#' + addpanel + ' input').val('');
   }
@@ -45,11 +52,11 @@ $(document).ready(function() {
         var todolist = $('<ul class="todolist" />')
           .sortable({
             start: function(event, uis) {
-              dragged_item = $("li", todolist).index(uis.item);
+              dragged_item = $('li', todolist).index(uis.item);
             },
             stop: function(event, uit) {
               $.post('api/' + $(ui.tab).attr('title') + '/' + dragged_item,
-                     {newindex: $("li", todolist).index(uit.item), _method: 'put'});
+                     {newindex: $('li', todolist).index(uit.item), _method: 'put'});
             }
           })
           .disableSelection()
@@ -57,6 +64,15 @@ $(document).ready(function() {
         $.each(data, function(i, item) {
           todolist.append(make_todo(item, $(ui.tab).attr('title'), i));
         });
+        $('<div class="ui-state-default ui-state-disabled ui-corner-all deltodo" />')
+          .html('Drop here to delete')
+          .droppable({
+			drop: function(event, ui) {
+			  ui.draggable.detach();
+              $('button', ui.draggable).click();
+			}
+		  })
+          .appendTo($(ui.panel));
         var addpanel = UID();
         $('<div id=' + addpanel + '/>')
           .html('<input type="text" class="todoinput" />' +
@@ -71,6 +87,29 @@ $(document).ready(function() {
         $('#' + addpanel + ' button').button().click(function() {
           add_todo(todolist, addpanel, $(ui.tab).attr('title'));
         });
+        $('<div class="managelist" />')
+          .append(
+            $('<a href="#">Manage...</a>')
+            .click(function() {
+              $('p', $(this).parent()).slideToggle('slow');
+              return false;
+            })
+          )
+          .append(
+            $('<p class="ui-state-default ui-corner-all"></p>')
+            .append($('<input type="text" />').val($(ui.tab).attr('title')))
+            .append($('<br />'))
+            .append($('<button>Rename</button>').click(function() {
+              $.post('api/' + $(ui.tab).attr('title'),
+                {newname: $('input', $(this).parent()).val(), _method: 'put'},
+                function() { reload(); });
+            }))
+            .append($('<button>Delete</button>').click(function() {
+              $.post('api/' + $(ui.tab).attr('title'), { _method: 'delete'},
+                function() { reload(); });
+            }))
+            .hide())
+          .appendTo($(ui.panel));
       });
     }
   });
