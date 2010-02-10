@@ -1,9 +1,9 @@
- #!/usr/bin/env ruby
+#!/usr/bin/env ruby
 
 require 'rubygems'
 require 'rack'
 
-fastcgi_log = File.open("/var/log/httpd/fastcgi.log", "a")
+fastcgi_log = File.open("/srv/fastcgi/todo.log", "a")
 STDOUT.reopen fastcgi_log
 STDERR.reopen fastcgi_log
 STDOUT.sync = true
@@ -19,11 +19,12 @@ module Rack
 	end
 end
 
+$: << File.join(File.expand_path(File.dirname(__FILE__)), 'lib')
 load 'crtodo_app.rb'
 
 builder = Rack::Builder.new do
 	map '/' do
-		run CRToDoApp.new
+		run CRToDo::Application.new
 	end
 end
 
