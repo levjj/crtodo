@@ -8,6 +8,7 @@
 <script type="text/javascript" src="js/jquery-1.4.1.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui-1.8rc1.custom.min.js"></script>
 <script type="text/javascript">
+/* <![CDATA[ */
 function S4() {
   return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
 }
@@ -141,6 +142,7 @@ $(document).ready(function() {
   }
   reload();
 });
+/* ]]> */
 </script>
 </head>
 <body>
@@ -149,8 +151,7 @@ $(document).ready(function() {
   <p><%= @username %>, <a href="/logout">Sign out</a></p>
 </div>
 <div id="main">
-  <ul>
-  </ul>
+  <ul><li /></ul>
 </div>
 </body>
 </html>
