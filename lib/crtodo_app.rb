@@ -51,11 +51,11 @@ module CRToDo
 				raise "Sorry, we couldn't find your identifier '#{provider}'"
 			else
 				redirect req.redirect_url(root_url,
-				                           root_url + "/login/complete")
+				                           root_url + "/logincomplete")
 			end
 		end
 
-		get '/login/complete' do
+		get '/logincomplete' do
 			res = openid_consumer.complete(params, request.url)
 			case res.status
 				when OpenID::Consumer::FAILURE
