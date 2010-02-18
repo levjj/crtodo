@@ -8,6 +8,7 @@ STDOUT.reopen fastcgi_log
 STDERR.reopen fastcgi_log
 STDOUT.sync = true
 
+ENV['RACK_ENV'] = "production"
 module Rack
 	class Request
 		def path_info

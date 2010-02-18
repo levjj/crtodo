@@ -19,6 +19,15 @@ module CRToDo
 			if (!@list.nil?) then
 				@list.save_list
 			end
+			@name
+		end
+
+		def reopen
+			@done = false
+			if (!@list.nil?) then
+				@list.save_list
+			end
+			@name
 		end
 
 		def done?
@@ -118,13 +127,6 @@ module CRToDo
 				@entries.delete_at index
 			end
 			return index
-		end
-
-		def finish
-			write_op do
-				@entries.each {|entry| entry.finish}
-			end
-			return self.name
 		end
 
 		def entries

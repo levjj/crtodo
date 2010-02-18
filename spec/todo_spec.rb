@@ -47,6 +47,12 @@ describe CRToDo::ToDo do
 		@new_todo.finish
 		@new_todo.done?.should == true
 	end
+
+	it "is not done after reopening" do
+		@new_todo.finish
+		@new_todo.reopen
+		@new_todo.done?.should == false
+	end
 end
 
 describe CRToDo::ToDoList do
@@ -147,15 +153,6 @@ describe CRToDo::ToDoList do
 		entry.finish
 		entry.done?.should == true
 		@todolist.done?.should == true
-		IO.read(@tempfile.path).should ==  "1,%s\n" % [TODO1]
-	end
-
-	it "is done after finishing it" do
-		@todolist.add_todo TODO1
-		entry = @todolist.entries[0]
-		@todolist.finish
-		@todolist.done?.should == true
-		entry.done?.should == true
 		IO.read(@tempfile.path).should ==  "1,%s\n" % [TODO1]
 	end
 

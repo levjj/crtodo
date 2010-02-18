@@ -22,12 +22,25 @@ h2 {
 
 #header {
 	width:100%;
+	height: 70px;
 	overflow:hidden;
 	background: #555;
 }
 
 #header h1 {
 	margin: 20px;
+	color: #fff;
+	float: left;
+}
+
+#header p {
+	float: right;
+	color: #fff;
+	margin-top: 45px;
+	margin-right: 10px;
+}
+
+#header p a {
 	color: #fff;
 }
 
@@ -68,6 +81,14 @@ div.deltodo {
 
 div.managelist {
 	width: 400px;
+}
+
+#loginbox {
+	width: 160px;
+}
+
+#loginbox legend {
+	font-size: 120%;
 }
 
 .todoinput {
