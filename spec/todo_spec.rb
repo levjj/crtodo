@@ -2,14 +2,16 @@ require 'rubygems'
 require 'crtodo'
 require 'tempfile'
 
-LIST1   = "Test List"
-LIST2   = "Second List"
+TESTUSER = "user@example.com"
 
-TODO1   = "Go shopping"
-TODO2   = "Clean the car"
-TODO3   = "Making homework"
+LIST1    = "Test List"
+LIST2    = "Second List"
 
-CSVFILE = File.join(File.dirname(__FILE__), "testlist.csv")
+TODO1    = "Go shopping"
+TODO2    = "Clean the car"
+TODO3    = "Making homework"
+
+CSVFILE  = File.join(File.dirname(__FILE__), "testlist.csv")
 
 describe CRToDo::ToDo do
 	before(:each) do
@@ -196,26 +198,27 @@ describe CRToDo::ToDoList do
 	end
 end
 
-describe CRToDo::ToDoDB do
+describe CRToDo::ToDoUser do
 	before(:each) do
 		@tempdir = Pathname.new(Dir.tmpdir) + rand(1048576).to_s
-		@tododb = CRToDo::ToDoDB.new @tempdir.to_s
+		@todouser = CRToDo::ToDoUser.new TESTUSER
+		@todouser.path = @tempdir
 	end
 
 	after(:each) do
 		@tempdir.rmtree
 	end
-	
+
 	it "has no lists after creation" do
-		@tododb.lists.empty?.should == true
+		@todouser.lists.empty?.should == true
 		@tempdir.children.empty?.should == true
 	end
 
 	it "stores newly created empty todo lists" do
-		name = @tododb.add_list LIST1
+		name = @todouser.add_list LIST1
 		name.should == LIST1
-		@tododb.lists.size.should == 1
-		list = @tododb.lists[LIST1]
+		@todouser.lists.size.should == 1
+		list = @todouser.lists[LIST1]
 		list.name.should == LIST1
 		list.entries.empty?.should == true
 		@tempdir.children.size.should == 1
@@ -225,51 +228,102 @@ describe CRToDo::ToDoDB do
 	end
 
 	it "stores newly created todolists with one entry" do
-		@tododb.add_list LIST1
-		@tododb.lists.size.should == 1
-		list = @tododb.lists[LIST1]
+		@todouser.add_list LIST1
+		@todouser.lists.size.should == 1
+		list = @todouser.lists[LIST1]
 		list.add_todo TODO1
 		list.name.should == LIST1
 		list.entries.size.should == 1
 		@tempdir.children.size.should == 1
 		listfile = @tempdir.children[0]
+		listfile.file?.should == true
 		listfile.should == @tempdir + (LIST1 + ".csv")
 		listfile.read.should == "0,%s\n" % [TODO1]
 	end
 
 	it "supports renaming of todo lists" do
-		@tododb.add_list LIST1
-		@tododb.lists.size.should == 1
-		@tododb.lists.values[0].name.should == LIST1
+		@todouser.add_list LIST1
+		@todouser.lists.size.should == 1
+		@todouser.lists.values[0].name.should == LIST1
 		@tempdir.children.size.should == 1
 		@tempdir.children[0].should == @tempdir + (LIST1 + ".csv")
-		@tododb.rename_list(LIST1, LIST1 + "2")
-		@tododb.lists.size.should == 1
-		@tododb.lists.values[0].name.should == LIST1 + "2"
+		@todouser.rename_list(LIST1, LIST1 + "2")
+		@todouser.lists.size.should == 1
+		@todouser.lists.values[0].name.should == LIST1 + "2"
 		@tempdir.children.size.should == 1
 		@tempdir.children[0].should == @tempdir + (LIST1 + "2.csv")
 	end
 
 	it "supports deletion of todo lists" do
-		@tododb.add_list LIST1
-		@tododb.lists.size.should == 1
-		@tododb.delete_list LIST1
-		@tododb.lists.empty?.should == true
+		@todouser.add_list LIST1
+		@todouser.lists.size.should == 1
+		@todouser.delete_list LIST1
+		@todouser.lists.empty?.should == true
 		@tempdir.children.empty?.should == true
 	end
 
 	it "serializes to JSON" do
-		@tododb.to_json.should ==  '[]'
-		@tododb.add_list LIST1
-		@tododb.to_json.should ==  '["%s"]' % LIST1
+		@todouser.to_json.should ==  '[]'
+		@todouser.add_list LIST1
+		@todouser.to_json.should ==  '["%s"]' % LIST1
 	end
 
 	it "serializes multiple lists in alphabetic order to JSON" do
-		@tododb.add_list LIST1
-		@tododb.add_list LIST2
-		json = JSON.parse @tododb.to_json
+		@todouser.add_list LIST1
+		@todouser.add_list LIST2
+		json = JSON.parse @todouser.to_json
 		json.size.should == 2
 		json[0].should == LIST2
 		json[1].should == LIST1
+	end
+end
+
+describe CRToDo::ToDoDB do
+	before(:each) do
+		@tempdir = Pathname.new(Dir.tmpdir) + rand(1048576).to_s
+		@tododb = CRToDo::ToDoDB.new @tempdir.to_s
+	end
+
+	after(:each) do
+		@tempdir.rmtree
+	end
+
+	it "has no users after creation" do
+		@tododb.users.empty?.should == true
+		@tempdir.children.empty?.should == true
+	end
+
+	it "stores newly added users" do
+		user = @tododb.add_user TESTUSER
+		user.should == TESTUSER
+		@tododb.users.size.should == 1
+		user = @tododb.users[TESTUSER]
+		user.name.should == TESTUSER
+		user.lists.empty?.should == true
+		@tempdir.children.size.should == 1
+		userdir = @tempdir.children[0]
+		userdir.directory?.should == true
+		userdir.should == @tempdir + TESTUSER
+		userdir.children.empty?.should == true
+	end
+
+	it "creates users automatically when not present" do
+		user = @tododb.get_user TESTUSER
+		user.name.should == TESTUSER
+		@tododb.users.size.should == 1
+		@tempdir.children.size.should == 1
+		user2 = @tododb.get_user TESTUSER
+		user2.name.should == TESTUSER
+		@tododb.users.size.should == 1
+		@tempdir.children.size.should == 1
+		user.should == user2
+	end
+
+	it "supports deletion of users" do
+		@tododb.add_user TESTUSER
+		@tododb.users.size.should == 1
+		@tododb.delete_user TESTUSER
+		@tododb.users.empty?.should == true
+		@tempdir.children.empty?.should == true
 	end
 end

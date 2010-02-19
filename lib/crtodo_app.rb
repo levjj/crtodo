@@ -15,7 +15,7 @@ module CRToDo
 	class Application < Sinatra::Application
 		def initialize
 			super
-			@model = CRToDo::ToDoDB.new
+			@db = CRToDo::ToDoDB.new
 		end
 
 		def openid_consumer
@@ -83,10 +83,6 @@ module CRToDo
 			redirect '/login'
 		end
 
-		before do
-			@listnames = @model.lists.keys
-		end
-
 		get '/*' do
 			if logged_in? then
 				pass
@@ -95,8 +91,14 @@ module CRToDo
 			end
 		end
 
+		before do
+			if logged_in? then
+				@model = @db.get_user session[:user]
+				@listnames = @model.lists.keys
+			end
+		end
+
 		get '/' do
-			@username = session[:user]
 			erb :index
 		end
 

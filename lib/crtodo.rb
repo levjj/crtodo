@@ -162,14 +162,19 @@ module CRToDo
 		end
 	end
 
-	class ToDoDB
-		attr_reader :lists
 
-		def initialize(path = nil)
-			path ||= File.join(File.dirname(__FILE__), "..", "data")
-			@path = Pathname.new(path)
-			@path.mkdir unless @path.exist?
+	class ToDoUser
+		attr_reader :lists
+		attr_reader :name
+
+		def initialize(name)
+			@name = name
 			@lists = {}
+		end
+
+		def path=(newpath)
+			@path = newpath
+			@path.mkdir unless @path.exist?
 			load_lists
 		end
 
@@ -196,14 +201,60 @@ module CRToDo
 
 		def load_lists
 			@path.children(false).each do |listpath|
-				list = ToDoList.new(listpath.basename.to_s.chomp(".csv"))
-				list.path = (@path + listpath.to_s).to_s
-				@lists[list.name] = list
+				if listpath.file? && listpath.extname == ".csv" then
+					list = ToDoList.new(listpath.basename.to_s.chomp(".csv"))
+					list.path = (@path + listpath.to_s).to_s
+					@lists[list.name] = list
+				end
 			end
 		end
 
 		def to_json(*a)
 			@lists.keys.sort.to_json(*a)
+		end
+
+		def delete
+			@path.delete
+		end
+	end
+
+	class ToDoDB
+		attr_reader :users
+
+		def initialize(path = nil)
+			path ||= File.join(File.dirname(__FILE__), "..", "data")
+			@path = Pathname.new(path)
+			@path.mkdir unless @path.exist?
+			@users = {}
+			load_users
+		end
+
+		def get_user(username)
+			unless @users.key? username
+				add_user username
+			end
+			return @users[username]
+		end
+
+		def add_user(username)
+			user = ToDoUser.new(username)
+			user.path = @path + username
+			@users[username] = user
+			return username
+		end
+
+		def delete_user(username)
+			@users[username].delete
+			@users.delete(username)
+			return username
+		end
+
+		def load_users
+			@path.children(true).each do |userpath|
+				if userpath.directory? then
+					add_user userpath.basename.to_s
+				end
+			end
 		end
 	end
 end
