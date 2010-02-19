@@ -2,7 +2,7 @@ require 'rubygems'
 require 'sinatra'
 require 'erb'
 require 'openid'
-require 'openid/store/memory'
+require 'openid/store/filesystem'
 require 'openid/extensions/ax'
 require 'crtodo'
 
@@ -16,11 +16,12 @@ module CRToDo
 		def initialize
 			super
 			@model = CRToDo::ToDoDB.new
+			@store = OpenID::Store::Filesystem.new(
+				File.join(File.dirname(__FILE__), "..", "openid"))
 		end
 
 		def openid_consumer
-			@openid_consumer ||= OpenID::Consumer.new(session,
-				OpenID::Store::Memory.new)
+			@openid_consumer ||= OpenID::Consumer.new(session, @store)
 		end
 
 		def root_url
@@ -59,7 +60,7 @@ module CRToDo
 			res = openid_consumer.complete(params, request.url)
 			case res.status
 				when OpenID::Consumer::FAILURE
-					raise "Sorry, we could not authenticate you."
+					raise "Sorry, we could not authenticate you.\n" + res.message
 				when OpenID::Consumer::SETUP_NEEDED
 					raise "Immediate request failed - Setup Needed"
 				when OpenID::Consumer::CANCEL
