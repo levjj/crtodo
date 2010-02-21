@@ -52,24 +52,17 @@ module CRToDo
 	end
 
 	class ToDoList
-		attr_reader :name
+		attr_reader :path
 
-		def initialize(name)
+		def initialize(path)
 			super()
-			@name = name
-			@entries = []
 			@loaded = false
+			@entries = []
+			self.path = path
 		end
 
-		def name=(newname)
-			write_op do
-				@name = newname
-				if !@path.nil? then
-					newpath = Pathname.new(@path).parent + (@name + ".csv")
-					FileUtils::mv(@path, newpath)
-					@path = newpath
-				end
-			end
+		def name
+			@path.basename.to_s.chomp ".csv"
 		end
 
 		def loaded?
@@ -78,7 +71,7 @@ module CRToDo
 
 		def path=(path)
 			@path = path
-			File.open(@path, 'w') {} unless File.exist? @path
+			@path.open('w') {} unless @path.exist?
 		end
 
 		def ensure_loaded
@@ -119,7 +112,7 @@ module CRToDo
 		end
 
 		def delete
-			File.delete @path
+			@path.delete
 		end
 
 		def delete_at(index)
@@ -165,11 +158,14 @@ module CRToDo
 
 	class ToDoUser
 		attr_reader :lists
-		attr_reader :name
 
-		def initialize(name)
-			@name = name
+		def initialize(path)
 			@lists = {}
+			self.path = path
+		end
+
+		def name
+			@path.basename.to_s
 		end
 
 		def path=(newpath)
@@ -179,8 +175,7 @@ module CRToDo
 		end
 
 		def add_list(name)
-			list = ToDoList.new(name)
-			list.path = (@path + (name + ".csv")).to_s
+			list = ToDoList.new @path + (name + ".csv")
 			@lists[list.name] = list
 			return name
 		end
@@ -194,16 +189,17 @@ module CRToDo
 		def rename_list(oldname, newname)
 			list = @lists[oldname]
 			@lists.delete(oldname)
-			list.name = newname
+			newpath = @path + (newname + ".csv")
+			FileUtils::mv(list.path, newpath)
+			list.path = newpath
 			@lists[newname] = list
 			return newname
 		end
 
 		def load_lists
 			@path.children(false).each do |listpath|
-				if listpath.file? && listpath.extname == ".csv" then
-					list = ToDoList.new(listpath.basename.to_s.chomp(".csv"))
-					list.path = (@path + listpath.to_s).to_s
+				if listpath.extname == ".csv" then
+					list = ToDoList.new listpath
 					@lists[list.name] = list
 				end
 			end
@@ -237,8 +233,7 @@ module CRToDo
 		end
 
 		def add_user(username)
-			user = ToDoUser.new(username)
-			user.path = @path + username
+			user = ToDoUser.new @path + username
 			@users[username] = user
 			return username
 		end

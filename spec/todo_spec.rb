@@ -59,13 +59,14 @@ end
 
 describe CRToDo::ToDoList do
 	before(:each) do
-		@tempfile = Tempfile.open("testlist")
-		@todolist = CRToDo::ToDoList.new LIST1
-		@todolist.path = @tempfile.path
+		@tempdir = Pathname.new(Dir.tmpdir) + rand(1048576).to_s
+		@tempdir.mkdir
+		@tempfile = @tempdir + LIST1
+		@todolist = CRToDo::ToDoList.new @tempfile
 	end
 
 	after(:each) do
-		@tempfile.close
+		@tempdir.rmtree
 	end
 
 	it "stores the name" do
@@ -76,7 +77,7 @@ describe CRToDo::ToDoList do
 		@todolist.loaded?.should == false
 		@todolist.entries.empty?.should == true
 		@todolist.loaded?.should == true
-		IO.read(@tempfile.path).should ==  ""
+		@tempfile.read.should ==  ""
 	end
 
 	it "stores newly added todo entries" do
@@ -89,8 +90,7 @@ describe CRToDo::ToDoList do
 		entry = @todolist.entries[0]
 		entry.name.should == TODO1
 		entry.done?.should == false
-		@tempfile.flush
-		IO.read(@tempfile.path).should ==  "0,%s\n" % [TODO1]
+		@tempfile.read.should ==  "0,%s\n" % [TODO1]
 	end
 
 	it "supports the insertion of todo entries" do
@@ -107,9 +107,7 @@ describe CRToDo::ToDoList do
 		@todolist.entries[0].name.should == TODO1
 		@todolist.entries[1].name.should == TODO2
 		@todolist.entries[2].name.should == TODO3
-		@tempfile.flush
-		IO.read(@tempfile.path).should ==
-				"0,%s\n0,%s\n0,%s\n" % [TODO1, TODO2, TODO3]
+		@tempfile.read.should == "0,%s\n0,%s\n0,%s\n" % [TODO1, TODO2, TODO3]
 	end
 
 	it "supports moving todo entries" do
@@ -120,23 +118,18 @@ describe CRToDo::ToDoList do
 		@todolist.entries.size.should == 2
 		@todolist.entries[0].name.should == TODO1
 		@todolist.entries[1].name.should == TODO2
-		@tempfile.flush
-		IO.read(@tempfile.path).should ==
-				"0,%s\n0,%s\n" % [TODO1, TODO2]
+		@tempfile.read.should == "0,%s\n0,%s\n" % [TODO1, TODO2]
 		@todolist.move_todo(1, 0)
 		@todolist.entries.size.should == 2
 		@todolist.entries[0].name.should == TODO2
 		@todolist.entries[1].name.should == TODO1
-		@tempfile.flush
-		IO.read(@tempfile.path).should ==
-				"0,%s\n0,%s\n" % [TODO2, TODO1]
+		@tempfile.read.should == "0,%s\n0,%s\n" % [TODO2, TODO1]
 	end
 
 	it "should ignore bad move operations" do
 		@todolist.move_todo(1, 0)
 		@todolist.entries.empty?.should == true
-		@tempfile.flush
-		IO.read(@tempfile.path).should == ""
+		@tempfile.read.should == ""
 	end
 
 	it "supports the deletion of todo entries" do
@@ -146,7 +139,7 @@ describe CRToDo::ToDoList do
 		@todolist.loaded?.should == true
 		@todolist.done?.should == true
 		@todolist.entries.empty?.should == true
-		IO.read(@tempfile.path).should ==  ""
+		@tempfile.read.should ==  ""
 	end
 
 	it "is done after finishing all entries" do
@@ -155,7 +148,7 @@ describe CRToDo::ToDoList do
 		entry.finish
 		entry.done?.should == true
 		@todolist.done?.should == true
-		IO.read(@tempfile.path).should ==  "1,%s\n" % [TODO1]
+		@tempfile.read.should ==  "1,%s\n" % [TODO1]
 	end
 
 	it "imports entries from the filesystem" do
@@ -201,17 +194,18 @@ end
 describe CRToDo::ToDoUser do
 	before(:each) do
 		@tempdir = Pathname.new(Dir.tmpdir) + rand(1048576).to_s
-		@todouser = CRToDo::ToDoUser.new TESTUSER
-		@todouser.path = @tempdir
+		@tempdir.mkdir
+		@tempuserdir = @tempdir + TESTUSER
+		@todouser = CRToDo::ToDoUser.new @tempuserdir
 	end
 
 	after(:each) do
-		@tempdir.rmtree
+		@tempuserdir.rmtree
 	end
 
 	it "has no lists after creation" do
 		@todouser.lists.empty?.should == true
-		@tempdir.children.empty?.should == true
+		@tempuserdir.children.empty?.should == true
 	end
 
 	it "stores newly created empty todo lists" do
@@ -221,9 +215,9 @@ describe CRToDo::ToDoUser do
 		list = @todouser.lists[LIST1]
 		list.name.should == LIST1
 		list.entries.empty?.should == true
-		@tempdir.children.size.should == 1
-		listfile = @tempdir.children[0]
-		listfile.should == @tempdir + (LIST1 + ".csv")
+		@tempuserdir.children.size.should == 1
+		listfile = @tempuserdir.children[0]
+		listfile.should == @tempuserdir + (LIST1 + ".csv")
 		listfile.read.should ==  ""
 	end
 
@@ -234,10 +228,10 @@ describe CRToDo::ToDoUser do
 		list.add_todo TODO1
 		list.name.should == LIST1
 		list.entries.size.should == 1
-		@tempdir.children.size.should == 1
-		listfile = @tempdir.children[0]
+		@tempuserdir.children.size.should == 1
+		listfile = @tempuserdir.children[0]
 		listfile.file?.should == true
-		listfile.should == @tempdir + (LIST1 + ".csv")
+		listfile.should == @tempuserdir + (LIST1 + ".csv")
 		listfile.read.should == "0,%s\n" % [TODO1]
 	end
 
@@ -245,13 +239,13 @@ describe CRToDo::ToDoUser do
 		@todouser.add_list LIST1
 		@todouser.lists.size.should == 1
 		@todouser.lists.values[0].name.should == LIST1
-		@tempdir.children.size.should == 1
-		@tempdir.children[0].should == @tempdir + (LIST1 + ".csv")
+		@tempuserdir.children.size.should == 1
+		@tempuserdir.children[0].should == @tempuserdir + (LIST1 + ".csv")
 		@todouser.rename_list(LIST1, LIST1 + "2")
 		@todouser.lists.size.should == 1
 		@todouser.lists.values[0].name.should == LIST1 + "2"
-		@tempdir.children.size.should == 1
-		@tempdir.children[0].should == @tempdir + (LIST1 + "2.csv")
+		@tempuserdir.children.size.should == 1
+		@tempuserdir.children[0].should == @tempuserdir + (LIST1 + "2.csv")
 	end
 
 	it "supports deletion of todo lists" do
@@ -259,7 +253,16 @@ describe CRToDo::ToDoUser do
 		@todouser.lists.size.should == 1
 		@todouser.delete_list LIST1
 		@todouser.lists.empty?.should == true
-		@tempdir.children.empty?.should == true
+		@tempuserdir.children.empty?.should == true
+	end
+
+	it "loads present lists from filesystem" do
+		@todouser.add_list LIST1
+		@todouser.lists.size.should == 1
+		@tempuserdir.children.size.should == 1
+		todouser2 = CRToDo::ToDoUser.new @tempuserdir
+		todouser2.lists.size.should == 1
+		todouser2.lists[LIST1].name.should == LIST1
 	end
 
 	it "serializes to JSON" do
@@ -305,6 +308,27 @@ describe CRToDo::ToDoDB do
 		userdir.directory?.should == true
 		userdir.should == @tempdir + TESTUSER
 		userdir.children.empty?.should == true
+	end
+
+	it "loads present users from filesystem" do
+		@tododb.add_user TESTUSER
+		@tododb.users.size.should == 1
+		@tempdir.children.size.should == 1
+		tododb2 = CRToDo::ToDoDB.new @tempdir.to_s
+		tododb2.users.size.should == 1
+	end
+
+	it "loads present users with lists from filesystem" do
+		user = @tododb.get_user TESTUSER
+		user.add_list LIST1
+		user.lists.size.should == 1
+		@tododb.users.size.should == 1
+		@tempdir.children.size.should == 1
+		@tempdir.children[0].children.size.should == 1
+		tododb2 = CRToDo::ToDoDB.new @tempdir.to_s
+		tododb2.users.size.should == 1
+		user2 = tododb2.get_user TESTUSER
+		user2.lists.size.should == 1
 	end
 
 	it "creates users automatically when not present" do
