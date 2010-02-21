@@ -151,6 +151,16 @@ describe CRToDo::ToDoList do
 		@tempfile.read.should ==  "1,%s\n" % [TODO1]
 	end
 
+	it "is not done if an entry was reopened" do
+		@todolist.add_todo TODO1
+		entry = @todolist.entries[0]
+		entry.finish
+		entry.reopen
+		entry.done?.should == false
+		@todolist.done?.should == false
+		@tempfile.read.should ==  "0,%s\n" % [TODO1]
+	end
+
 	it "imports entries from the filesystem" do
 		@todolist.loaded?.should == false
 		@todolist.path = Pathname.new(CSVFILE)

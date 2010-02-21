@@ -17,10 +17,20 @@ task :run do |t|
 	exec "ruby -Ilib runlocal.rb #{ARGV.join(' ')}"
 end
 
+desc "Run all examples"
 Spec::Rake::SpecTask.new('spec') do |spec|
 	spec.spec_files = TEST_FILES
 	spec.rcov = false
 	spec.ruby_opts = ["-Ilib"]
+	spec.spec_opts = ["--format", "specdoc", "--color", "--backtrace"]
+end
+
+desc "Run all examples with RCov"
+Spec::Rake::SpecTask.new('spec_rcov') do |spec|
+	spec.spec_files = TEST_FILES
+	spec.rcov = true
+	spec.ruby_opts = ["-Ilib"]
+	spec.rcov_opts = ["--no-html", "--no-rcovrt", "--gcc", "--exclude", TEST_FILES]
 	spec.spec_opts = ["--format", "specdoc", "--color", "--backtrace"]
 end
 

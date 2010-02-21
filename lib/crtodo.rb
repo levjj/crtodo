@@ -199,7 +199,7 @@ module CRToDo
 		def load_lists
 			@path.children(false).each do |listpath|
 				if listpath.extname == ".csv" then
-					list = ToDoList.new listpath
+					list = ToDoList.new @path + listpath.basename.to_s
 					@lists[list.name] = list
 				end
 			end
