@@ -103,11 +103,17 @@ $(document).ready(function() {
             .append($('<button>Rename</button>').click(function() {
               $.post('api/' + $(ui.tab).attr('title'),
                 {newname: $('input', $(this).parent()).val(), _method: 'put'},
-                function() { reload(); });
+                function(data) {
+                  reload(function() {
+                    var link = $('a[title="' + data + '"]');
+                    var myid = link.attr('href');
+                    tabs.tabs('option', 'selected', myid);
+                  });
+                });
             }))
             .append($('<button>Delete</button>').click(function() {
               $.post('api/' + $(ui.tab).attr('title'), { _method: 'delete'},
-                function() { reload(); });
+                function() { reload(function() { tabs.tabs('select', -1); });});
             }))
             .hide())
           .appendTo($(ui.panel));
@@ -117,15 +123,16 @@ $(document).ready(function() {
 
   function addlist() {
     $.post('api/', {list: $('#add input').val()}, function(data) {
-      reload();
+      reload(function() {
+        var link = $('a[title="' + data + '"]');
+        var myid = link.attr('href');
+        tabs.tabs('option', 'selected', myid);
+      });
       //tabs.tabs('select', $('a[title="' + data + '"]').attr('href'));
-      var link = $('a[title="' + data + '"]');
-      var myid = link.attr('href');
-      tabs.tabs('option', 'selected', $('a[title="' + data + '"]').attr('href'));
     });
   }
 
-  function reload() {
+  function reload(oncomplete) {
     $.getJSON('api/', function(data) {
       while (tabs.tabs('length') > 0) {
         tabs.tabs('remove', 0);
@@ -146,10 +153,10 @@ $(document).ready(function() {
         }
       });
       $('#add button').click(function() { addlist(); });
-      tabs.tabs('select', -1);
+      oncomplete();
     });
   }
-  reload();
+  reload(function() { tabs.tabs('select', -1); });
 });
 /* ]]> */
 </script>
