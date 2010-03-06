@@ -1,12 +1,10 @@
 require 'pathname'
-require 'csv'
 require 'json'
 require 'fileutils'
 
 module CRToDo
 	class ToDo
 		attr_reader :name
-		attr_accessor :list
 
 		def initialize(name)
 			super()
@@ -14,40 +12,16 @@ module CRToDo
 			@done = false
 		end
 
-		def finish
-			@done = true
-			if (!@list.nil?) then
-				@list.save_list
-			end
-			@name
+		def self.from_hash(hash)
+			self.new hash["name"]
 		end
 
-		def reopen
-			@done = false
-			if (!@list.nil?) then
-				@list.save_list
-			end
-			@name
-		end
-
-		def done?
-			@done
-		end
-
-		def self.from_array(array)
-			todo = self.new array[1]
-			if (array[0].to_s == "1") then
-				todo.finish
-			end
-			return todo
-		end
-
-		def to_array
-			[@done ? 1 : 0, @name]
+		def self.from_json(json)
+			self.from_hash JSON.parse(json)
 		end
 
 		def to_json(*a)
-			{ :name => self.name, :done => @done}.to_json(*a)
+			{ :name => self.name }.to_json(*a)
 		end
 	end
 
@@ -56,13 +30,14 @@ module CRToDo
 
 		def initialize(path)
 			super()
+			@open_entries = []
+			@done_entries = []
 			@loaded = false
-			@entries = []
 			self.path = path
 		end
 
 		def name
-			@path.basename.to_s.chomp ".csv"
+			@path.basename.to_s.chomp ".json"
 		end
 
 		def loaded?
@@ -71,7 +46,7 @@ module CRToDo
 
 		def path=(path)
 			@path = path
-			@path.open('w') {} unless @path.exist?
+			self.save_list unless @path.exist?
 		end
 
 		def ensure_loaded
@@ -93,22 +68,40 @@ module CRToDo
 
 		def add_todo(name, position = nil)
 			write_op do
-				position ||= @entries.size
-				todo = ToDo.new(name)
-				todo.list = self
-				@entries.insert(position, todo)
+				position ||= @open_entries.size
+				@open_entries.insert(position, ToDo.new(name))
 			end
 			return position
 		end
 
 		def move_todo(from_index, to_index)
 			write_op do
-				todo = @entries[from_index]
+				todo = @open_entries[from_index]
 				return if todo.nil?
-				@entries.delete_at from_index
-				@entries.insert(to_index, todo)
+				@open_entries.delete_at from_index
+				@open_entries.insert(to_index, todo)
 			end
 			return to_index
+		end
+
+		def finish(pos)
+			write_op do
+				todo = @open_entries[pos]
+				return if todo.nil?
+				@open_entries.delete_at pos
+				@done_entries << todo
+			end
+			return pos
+		end
+
+		def reopen(pos)
+			write_op do
+				todo = @done_entries[pos]
+				return if todo.nil?
+				@done_entries.delete_at pos
+				@open_entries << todo
+			end
+			return pos
 		end
 
 		def delete
@@ -117,44 +110,56 @@ module CRToDo
 
 		def delete_at(index)
 			write_op do
-				@entries.delete_at index
+				@open_entries.delete_at index
 			end
 			return index
 		end
 
+		def open_entries
+			read_op do
+				@open_entries
+			end
+		end
+
+		def done_entries
+			read_op do
+				@done_entries
+			end
+		end
+
 		def entries
-			ensure_loaded
-			return @entries
+			read_op do
+				@open_entries + @done_entries
+			end
 		end
 
 		def done?
 			read_op do
-				@entries.all? {|entry| entry.done?}
+				@open_entries.empty?
 			end
 		end
 
 		def load_list
-			CSV.foreach @path do |row|
-				todo = ToDo.from_array(row)
-				todo.list = self
-				@entries << todo
+			@open_entries = []
+			@done_entries = []
+			json = JSON.parse @path.read
+			json["open"].each do |todo|
+				@open_entries << ToDo.from_hash(todo)
+			end
+			json["done"].each do |todo|
+				@done_entries << ToDo.from_hash(todo)
 			end
 			@loaded = true
 		end
 
 		def save_list
-			CSV.open(@path, 'w') do |writer|
-				@entries.each do |entry|
-					writer << entry.to_array
-				end
-			end
+			@path.open('w') {|f| f.write self.to_json}
 		end
 
 		def to_json(*a)
-			entries.to_json(*a)
+			{:open => @open_entries, :done => @done_entries}.to_json
 		end
 	end
-
 
 	class ToDoUser
 		attr_reader :lists
@@ -175,7 +180,7 @@ module CRToDo
 		end
 
 		def add_list(name)
-			list = ToDoList.new @path + (name + ".csv")
+			list = ToDoList.new @path + (name + ".json")
 			@lists[list.name] = list
 			return name
 		end
@@ -189,7 +194,7 @@ module CRToDo
 		def rename_list(oldname, newname)
 			list = @lists[oldname]
 			@lists.delete(oldname)
-			newpath = @path + (newname + ".csv")
+			newpath = @path + (newname + ".json")
 			FileUtils::mv(list.path, newpath)
 			list.path = newpath
 			@lists[newname] = list
@@ -198,7 +203,7 @@ module CRToDo
 
 		def load_lists
 			@path.children(false).each do |listpath|
-				if listpath.extname == ".csv" then
+				if listpath.extname == ".json" then
 					list = ToDoList.new @path + listpath.basename.to_s
 					@lists[list.name] = list
 				end
