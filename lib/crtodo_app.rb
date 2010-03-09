@@ -111,11 +111,15 @@ module CRToDo
 			@model.add_list params[:list]
 		end
 
-		get '/api/:name' do |name|
-			@model.lists[name].to_json
+		get '/api/:name/open' do |name|
+			@model.lists[name].open_entries.to_json
 		end
 
-		post '/api/:name' do |name|
+		get '/api/:name/done' do |name|
+			@model.lists[name].done_entries.to_json
+		end
+
+		post '/api/:name/open' do |name|
 			list = @model.lists[name]
 			if params.key? :pos then
 				list.add_todo(params[:todo], params[:pos])
@@ -125,33 +129,33 @@ module CRToDo
 		end
 
 		put '/api/:name' do |name|
-			if params.key? "newname" then
-				@model.rename_list(name, params["newname"])
-			else
-				@model.lists[name].finish
-			end
+			@model.rename_list(name, params["newname"])
 		end
 
 		delete '/api/:name' do |name|
 			@model.delete_list name
 		end
 
-		get '/api/:name/:todo' do |name, todo|
-			@model.lists[name].entries[todo.to_i].to_json
-		end
-
-		put '/api/:name/:todo' do |name, todo|
+		put '/api/:name/open/:todo' do |name, todo|
+			p params
 			if params.key? "newindex" then
 				@model.lists[name].move_todo(todo.to_i,
 				                             params["newindex"].to_i)
 			else
-				entry = @model.lists[name].entries[todo.to_i]
-				entry.done? ? entry.reopen : entry.finish
+				entry = @model.lists[name].finish todo.to_i
 			end
 		end
 
-		delete '/api/:name/:todo' do |name, todo|
-			@model.lists[name].delete_at(todo.to_i)
+		put '/api/:name/done/:todo' do |name, todo|
+			entry = @model.lists[name].reopen todo.to_i
+		end
+
+		delete '/api/:name/open/:todo' do |name, todo|
+			@model.lists[name].delete_open_todo_at(todo.to_i)
+		end
+
+		delete '/api/:name/done/:todo' do |name, todo|
+			@model.lists[name].delete_done_todo_at(todo.to_i, true)
 		end
 	end
 end

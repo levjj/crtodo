@@ -33,11 +33,18 @@ h2 {
 	float: left;
 }
 
+#header p span.icons,
+#header p span.icons a {
+	color: #888;
+	font-size: 90%;
+}
+
 #header p {
 	float: right;
+	text-align: right;
 	color: #fff;
-	margin-top: 45px;
-	margin-right: 10px;
+	margin-top: 10px;
+	margin-right: 20px;
 }
 
 #header p a {
@@ -52,7 +59,6 @@ h2 {
 }
 
 ul.todolist li,
-div.deltodo,
 div.managelist p,
 div.managelist a {
 	list-style-type: none;
@@ -70,17 +76,9 @@ ul.todolist li input {
 	float: right;
 }
 
-a.deltodo {
-	float: right;
-	font-weight: bolder;
-}
-
-div.deltodo {
-	width: 376px;
-}
-
 div.managelist {
-	width: 400px;
+	clear: both;
+	width: 420px;
 }
 
 #loginbox {
@@ -95,4 +93,11 @@ div.managelist {
 	width: 314px;
 	margin-left: 6px;
 	margin-right: 10px;
+}
+
+.todogroup {
+	float: left;
+	padding-top: 9px;
+	padding: 4px;
+	margin: 6px;
 }

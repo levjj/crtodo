@@ -2,172 +2,24 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<title>CRToDo web interface beta</title>
-<link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
-<link rel="stylesheet" type="text/css" href="css/jquery-ui-1.8rc1.custom.css" media="screen" />
-<script type="text/javascript" src="js/jquery-1.4.1.min.js"></script>
-<script type="text/javascript" src="js/jquery-ui-1.8rc1.custom.min.js"></script>
-<script type="text/javascript">
-/* <![CDATA[ */
-function S4() {
-  return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-}
-function UID() {
-  return 'z' + S4() + S4() + S4();
-}
-$(document).ready(function() {
-  var tabs = $('#main').tabs();
-
-  function make_todo(item, list, index) {
-    var uid = UID();
-    return $('<li class="ui-state-default ui-corner-all" />')
-      .append($('<label for="' + uid + '">' + item.name + '</label>'))
-      .append(
-        $('<button>X</button>')
-          .click(function() {
-            $.post('api/' + list + '/' + index, {_method: 'delete'});
-          })
-          .hide()
-      )
-      .append($('<input id="' + uid
-        + '" ' + (item.done ? 'checked="checked" ' : '')
-        + 'type="checkbox" />').click(function() {
-          $.post('api/' + list + '/' + index, {_method: 'put'});
-      }));
-  }
-
-  function add_todo(todolist, addpanel, list) {
-    var name = $('#' + addpanel + ' input').val();
-    $.post('api/' + list, {todo: name}, function() {
-      todolist.append(
-        make_todo({name: name, done: false}, list, $('li', todolist).size()));
-    });
-    $('#' + addpanel + ' input').val('');
-  }
-
-  tabs.bind('tabsselect', function(event, ui) {
-    if (ui.index < tabs.tabs('length') - 1) {
-      $.getJSON('api/' + $(ui.tab).attr('title'), function(data) {
-        var dragged_item;
-        $(ui.panel).html('');
-        var todolist = $('<ul class="todolist" />')
-          .sortable({
-            start: function(event, uis) {
-              dragged_item = $('li', todolist).index(uis.item);
-            },
-            stop: function(event, uit) {
-              $.post('api/' + $(ui.tab).attr('title') + '/' + dragged_item,
-                     {newindex: $('li', todolist).index(uit.item), _method: 'put'});
-            }
-          })
-          .disableSelection()
-          .appendTo($(ui.panel));
-        $.each(data, function(i, item) {
-          todolist.append(make_todo(item, $(ui.tab).attr('title'), i));
-        });
-        $('<div class="ui-state-default ui-state-disabled ui-corner-all deltodo" />')
-          .html('Drop here to delete')
-          .droppable({
-			drop: function(event, ui) {
-			  ui.draggable.detach();
-              $('button', ui.draggable).click();
-			}
-		  })
-          .appendTo($(ui.panel));
-        var addpanel = UID();
-        $('<div id=' + addpanel + '/>')
-          .html('<input type="text" class="todoinput" />' +
-                '<button>Add</button>')
-          .appendTo($(ui.panel));
-        $('#' + addpanel + ' input').keypress(function(event) {
-          if (event.keyCode == '13') {
-            event.preventDefault();
-            add_todo(todolist, addpanel, $(ui.tab).attr('title'));
-          }
-        });
-        $('#' + addpanel + ' button').click(function() {
-          add_todo(todolist, addpanel, $(ui.tab).attr('title'));
-        });
-        $('<div class="managelist" />')
-          .append(
-            $('<a href="#">Manage...</a>')
-            .click(function() {
-              $('p', $(this).parent()).slideToggle('slow');
-              return false;
-            })
-          )
-          .append(
-            $('<p class="ui-state-default ui-corner-all"></p>')
-            .append($('<input type="text" />').val($(ui.tab).attr('title')))
-            .append($('<br />'))
-            .append($('<button>Rename</button>').click(function() {
-              $.post('api/' + $(ui.tab).attr('title'),
-                {newname: $('input', $(this).parent()).val(), _method: 'put'},
-                function(data) {
-                  reload(function() {
-                    var link = $('a[title="' + data + '"]');
-                    var myid = link.attr('href');
-                    tabs.tabs('option', 'selected', myid);
-                  });
-                });
-            }))
-            .append($('<button>Delete</button>').click(function() {
-              $.post('api/' + $(ui.tab).attr('title'), { _method: 'delete'},
-                function() { reload(function() { tabs.tabs('select', -1); });});
-            }))
-            .hide())
-          .appendTo($(ui.panel));
-      });
-    }
-  });
-
-  function addlist() {
-    $.post('api/', {list: $('#add input').val()}, function(data) {
-      reload(function() {
-        var link = $('a[title="' + data + '"]');
-        var myid = link.attr('href');
-        tabs.tabs('option', 'selected', myid);
-      });
-      //tabs.tabs('select', $('a[title="' + data + '"]').attr('href'));
-    });
-  }
-
-  function reload(oncomplete) {
-    $.getJSON('api/', function(data) {
-      while (tabs.tabs('length') > 0) {
-        tabs.tabs('remove', 0);
-      }
-      $.each(data, function(i, item) {
-        var listid = '#' + UID();
-        tabs.tabs('add', listid, item);
-        $(listid).html('Loading <b>' + item + '</b> ...');
-        $('a[href="' + listid + '"]').attr('title', item);
-      });
-      tabs.tabs('add', '#add', '<b>New List</b>');
-      $('#add').html('New Name: <input type="text" class="todoinput" />' +
-                     '<button>Add</button>');
-      $('#add input').keypress(function(event) {
-        if (event.keyCode == '13') {
-          event.preventDefault();
-          addlist();
-        }
-      });
-      $('#add button').click(function() { addlist(); });
-      oncomplete();
-    });
-  }
-  reload(function() { tabs.tabs('select', -1); });
-});
-/* ]]> */
-</script>
+  <title>CRToDo web interface beta</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css" media="screen" />
+  <link rel="stylesheet" type="text/css" href="css/jquery-ui-1.8rc1.custom.css" media="screen" />
+  <script type="text/javascript" src="js/jquery-1.4.1.min.js"></script>
+  <script type="text/javascript" src="js/jquery-ui-1.8rc1.custom.min.js"></script>
+  <script type="text/javascript" src="js/crtodo.js"></script>
 </head>
 <body>
-<div id="header">
-  <h1>CRToDo web interface <i>beta</i></h1>
-  <p><%= session[:user] %>, <a href="/logout">Sign out</a></p>
-</div>
-<div id="main">
-  <ul><li /></ul>
-</div>
+  <div id="header">
+    <h1>CRToDo web interface <i>beta</i></h1>
+    <p>
+      <span class="icons"><a href="http://axialis.com/free/icons">Icons</a> by
+      <a href="http://axialis.com">Axialis Team</a></span><br /><br />
+      <%= session[:user] %>, <a href="/logout">Sign out</a>
+    </p>
+  </div>
+  <div id="main">
+    <ul><li /></ul>
+  </div>
 </body>
 </html>

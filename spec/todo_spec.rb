@@ -133,7 +133,18 @@ describe CRToDo::ToDoList do
 	it "supports the deletion of todo entries" do
 		@todolist.loaded?.should == false
 		@todolist.add_todo TODO1
-		@todolist.delete_at 0
+		@todolist.delete_open_todo_at 0
+		@todolist.loaded?.should == true
+		@todolist.done?.should == true
+		@todolist.entries.empty?.should == true
+		@tempfile.read.should == EMPTY_JSON
+	end
+
+	it "supports the deletion of done todo entries" do
+		@todolist.loaded?.should == false
+		@todolist.add_todo TODO1
+		@todolist.finish 0
+		@todolist.delete_done_todo_at 0
 		@todolist.loaded?.should == true
 		@todolist.done?.should == true
 		@todolist.entries.empty?.should == true

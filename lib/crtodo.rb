@@ -108,9 +108,16 @@ module CRToDo
 			@path.delete
 		end
 
-		def delete_at(index)
+		def delete_open_todo_at(index)
 			write_op do
 				@open_entries.delete_at index
+			end
+			return index
+		end
+
+		def delete_done_todo_at(index)
+			write_op do
+				@done_entries.delete_at index
 			end
 			return index
 		end
@@ -153,7 +160,7 @@ module CRToDo
 		end
 
 		def save_list
-			@path.open('w') {|f| f.write self.to_json}
+			@path.open('w') {|file| file.write self.to_json}
 		end
 
 		def to_json(*a)
@@ -192,8 +199,7 @@ module CRToDo
 		end
 
 		def rename_list(oldname, newname)
-			list = @lists[oldname]
-			@lists.delete(oldname)
+			list = @lists.delete(oldname)
 			newpath = @path + (newname + ".json")
 			FileUtils::mv(list.path, newpath)
 			list.path = newpath
