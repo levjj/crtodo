@@ -137,7 +137,6 @@ module CRToDo
 		end
 
 		put '/api/:name/open/:todo' do |name, todo|
-			p params
 			if params.key? "newindex" then
 				@model.lists[name].move_todo(todo.to_i,
 				                             params["newindex"].to_i)
