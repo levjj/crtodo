@@ -91,7 +91,7 @@ module CRToDo
 				@open_entries.delete_at pos
 				@done_entries << todo
 			end
-			return pos
+			return @done_entries.size - 1
 		end
 
 		def reopen(pos)
@@ -101,7 +101,7 @@ module CRToDo
 				@done_entries.delete_at pos
 				@open_entries << todo
 			end
-			return pos
+			return @open_entries.size - 1
 		end
 
 		def delete

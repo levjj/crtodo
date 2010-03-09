@@ -142,7 +142,7 @@ module CRToDo
 				@model.lists[name].move_todo(todo.to_i,
 				                             params["newindex"].to_i)
 			else
-				entry = @model.lists[name].finish todo.to_i
+				@model.lists[name].finish todo.to_i
 			end
 		end
 
