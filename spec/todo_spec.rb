@@ -240,6 +240,34 @@ describe CRToDo::ToDoUser do
 		listfile.read.should == EMPTY_JSON
 	end
 
+	it "rejects list names with slashes" do
+		name = @todouser.add_list('/' + LIST1)
+		name.nil?.should == true
+		@todouser.lists.empty?.should == true
+		@tempuserdir.children.empty?.should == true
+	end
+
+	it "rejects list names with nullbytes" do
+		name = @todouser.add_list('\0' + LIST1)
+		name.nil?.should == true
+		@todouser.lists.empty?.should == true
+		@tempuserdir.children.empty?.should == true
+	end
+
+	it "rejects empty list names" do
+		name = @todouser.add_list ''
+		name.nil?.should == true
+		@todouser.lists.empty?.should == true
+		@tempuserdir.children.empty?.should == true
+	end
+
+	it "rejects too long list names" do
+		name = @todouser.add_list('.' * 256)
+		name.nil?.should == true
+		@todouser.lists.empty?.should == true
+		@tempuserdir.children.empty?.should == true
+	end
+
 	it "stores newly created todolists with one entry" do
 		@todouser.add_list LIST1
 		@todouser.lists.size.should == 1

@@ -187,6 +187,12 @@ module CRToDo
 		end
 
 		def add_list(name)
+			if  name.empty? ||
+				name.length > 255 ||
+				name.include?('/') ||
+				name.include?('\0') then
+				return nil
+			end
 			list = ToDoList.new @path + (name + ".json")
 			@lists[list.name] = list
 			return name
