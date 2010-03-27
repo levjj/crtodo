@@ -19,9 +19,17 @@
     <p>Not logged in</a>
   </div>
   <div id="main">
-    <form action="login" method="post">
-      <fieldset id="loginbox">
-        <legend>Log in with</legend>
+    <div class="login ui-widget-content">
+      <p><b>CRToDo</b> is a simple to-do managing application similar to <a href="http://www.rememberthemilk.com/">RememberTheMilk</a> but restricted to basic features.</p>
+      <p>Free and Open Source</p>
+      <p>Login with OpenID 2.0</p>
+      <p>Managing multiple to-do lists</p>
+      <p>Rearrange and delete todo-entries with drag-and-drop</p>
+      <p>Deploy your own <a href="http://livoris.de/projects/crtodo">CRToDo Server</a></p>
+    </div>
+    <div class="login ui-widget-content">
+      <form action="login" method="post">
+        <h3>Log in with</h3>
         <input type="radio" id="google" value="google" name="provider" />
         <label for="google"><img alt="Google" src="images/google.gif" /></label><br />
 
@@ -29,8 +37,9 @@
         <label for="yahoo"><img alt="Yahoo!" src="images/yahoo.gif" /></label><br />
 
         <input type="submit" id="submit" name="continue" value="Continue" />
-      </fieldset>
-    </form>
+      </form>
+    </div>
+    <div class="footer" />
   </div>
 </body>
 </html>

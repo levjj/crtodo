@@ -143,3 +143,11 @@ div.footer {
 .todoentry {
 	cursor: move;
 }
+
+div.login {
+	width: 400px;
+	display: block;
+	float: left;
+	padding: 6px;
+	margin: 6px;
+}
