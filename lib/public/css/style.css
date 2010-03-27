@@ -139,3 +139,7 @@ div.right {
 div.footer {
 	clear: both;
 }
+
+.todoentry {
+	cursor: move;
+}
