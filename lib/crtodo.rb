@@ -244,6 +244,12 @@ module CRToDo
 		end
 
 		def add_user(username)
+			if  username.empty? ||
+				username.length > 255 ||
+				username.include?('/') ||
+				username.include?('\0') then
+				return nil
+			end
 			user = ToDoUser.new @path + username
 			@users[username] = user
 			return username

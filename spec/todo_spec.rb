@@ -329,6 +329,34 @@ describe CRToDo::ToDoDB do
 		userdir.children.empty?.should == true
 	end
 
+	it "rejects usernames with slashes" do
+		user = @tododb.add_user('/' + TESTUSER)
+		user.nil?.should == true
+		@tododb.users.empty?.should == true
+		@tempdir.children.empty?.should == true
+	end
+
+	it "rejects usernames with nullbytes" do
+		user = @tododb.add_user('\0' + TESTUSER)
+		user.nil?.should == true
+		@tododb.users.empty?.should == true
+		@tempdir.children.empty?.should == true
+	end
+
+	it "rejects empty usernames" do
+		user = @tododb.add_user ''
+		user.nil?.should == true
+		@tododb.users.empty?.should == true
+		@tempdir.children.empty?.should == true
+	end
+
+	it "rejects too long usernames" do
+		user = @tododb.add_user('.' * 256)
+		user.nil?.should == true
+		@tododb.users.empty?.should == true
+		@tempdir.children.empty?.should == true
+	end
+
 	it "loads present users from filesystem" do
 		@tododb.add_user TESTUSER
 		@tododb.users.size.should == 1
