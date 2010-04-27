@@ -144,10 +144,20 @@ div.footer {
 	cursor: move;
 }
 
-div.login {
-	width: 400px;
+div.description {
+	width: 450px;
 	display: block;
 	float: left;
-	padding: 6px;
+	padding: 10px;
 	margin: 6px;
+}
+div.login {
+	width: 200px;
+	display: block;
+	float: left;
+	padding: 10px;
+	margin: 6px;
+}
+p.ind {
+	margin-left: 15px;
 }

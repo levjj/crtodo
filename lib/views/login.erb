@@ -16,27 +16,30 @@
       powered by <a href="http://jquery.com/">jQUery</a><br />
       <a href="http://axialis.com/free/icons">Icons</a> by <a href="http://axialis.com">Axialis Team</a>
     </p>
-    <p>Not logged in</a>
+    <p>Not logged in</p>
   </div>
   <div id="main">
-    <div class="login ui-widget-content">
+    <div class="description ui-widget-content">
       <p><b>CRToDo</b> is a simple to-do managing application similar to <a href="http://www.rememberthemilk.com/">RememberTheMilk</a> but restricted to basic features.</p>
-      <p>Free and Open Source</p>
-      <p>Login with OpenID 2.0</p>
-      <p>Managing multiple to-do lists</p>
-      <p>Rearrange and delete todo-entries with drag-and-drop</p>
-      <p>Deploy your own <a href="http://livoris.de/projects/crtodo">CRToDo Server</a></p>
+      <p class="ind">Free and Open Source</p>
+      <p class="ind">Login with OpenID 2.0</p>
+      <p class="ind">Managing multiple to-do lists</p>
+      <p class="ind">Rearrange and delete todo-entries with drag-and-drop</p>
+      <p class="ind">Deploy your own <a href="http://livoris.de/projects/crtodo">CRToDo Server</a></p>
     </div>
     <div class="login ui-widget-content">
       <form action="login" method="post">
-        <h3>Log in with</h3>
-        <input type="radio" id="google" value="google" name="provider" />
-        <label for="google"><img alt="Google" src="images/google.gif" /></label><br />
+        <p><b>Log in with</b></p>
+        <p class="ind">
+          <input type="radio" id="google" value="google" name="provider" />
+          <label for="google"><img alt="Google" src="images/google.gif" /></label><br />
 
-        <input type="radio" id="yahoo" value="yahoo" name="provider" />
-        <label for="yahoo"><img alt="Yahoo!" src="images/yahoo.gif" /></label><br />
-
-        <input type="submit" id="submit" name="continue" value="Continue" />
+          <input type="radio" id="yahoo" value="yahoo" name="provider" />
+          <label for="yahoo"><img alt="Yahoo!" src="images/yahoo.gif" /></label>
+        </p>
+        <p class="ind">
+          <input type="submit" id="submit" name="continue" value="Continue" />
+        </p>
       </form>
     </div>
     <div class="footer" />
