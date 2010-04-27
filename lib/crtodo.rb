@@ -186,13 +186,15 @@ module CRToDo
 			load_lists
 		end
 
+		def self.safe_name?(name)
+			return name.length > 0 &&
+			       name.length < 256 &&
+			       !name.include?('/') &&
+			       !name.include?('\0')
+		end
+
 		def add_list(name)
-			if  name.empty? ||
-				name.length > 255 ||
-				name.include?('/') ||
-				name.include?('\0') then
-				return nil
-			end
+			return nil unless ToDoUser.safe_name? name
 			list = ToDoList.new @path + (name + ".json")
 			@lists[list.name] = list
 			return name
@@ -205,6 +207,7 @@ module CRToDo
 		end
 
 		def rename_list(oldname, newname)
+			return nil unless ToDoUser.safe_name? newname
 			list = @lists.delete(oldname)
 			newpath = @path + (newname + ".json")
 			FileUtils::mv(list.path, newpath)
@@ -250,12 +253,7 @@ module CRToDo
 		end
 
 		def add_user(username)
-			if  username.empty? ||
-				username.length > 255 ||
-				username.include?('/') ||
-				username.include?('\0') then
-				return nil
-			end
+			return nil unless ToDoUser.safe_name? username
 			user = ToDoUser.new @path + username
 			@users[username] = user
 			return username
