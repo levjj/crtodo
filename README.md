@@ -32,6 +32,7 @@ Requirements
 * RubyGems 1.3.5 or newer
 * Sinatra 0.9.6
 * Ruby JSON implementation 1.2.0
+* Ruby-OpenID 2.1.8
 * RSpec 2.3.0 *for running the tests*
 * Rake 0.8.7 *for running the tests*
 * RCov 0.9.7.1 *for test coverage*
@@ -83,6 +84,19 @@ below.
     Options +FollowSymLinks +ExecCGI
     RewriteRule ^(.*)$ dispatch.fcgi [QSA,L]
 
+Due to a Bug in the FCGI wrapper, the return_to request for OpenID does not
+exactly match the original request. When you get the error message
+
+    Sorry, we could not authenticate you. return_to_path does not match
+
+the easiest way to fix it, is by replacing line 197 in the file /usr/lib/ruby/gems/1.8/gems/ruby-openid-2.1.8/lib/openid/consumer/idres.rb
+
+    [:scheme, :host, :port, :path].each do |meth|
+
+with:
+
+    [:scheme, :host, :port].each do |meth|
+        
 Acknowledgement
 ===============
 
