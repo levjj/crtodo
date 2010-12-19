@@ -3,7 +3,7 @@
 require 'rubygems'
 require 'rack'
 
-fastcgi_log = File.open("/srv/fastcgi/todo.log", "a")
+fastcgi_log = File.open("/var/log/todo.log", "a")
 STDOUT.reopen fastcgi_log
 STDERR.reopen fastcgi_log
 STDOUT.sync = true
