@@ -4,7 +4,8 @@ require 'rubygems'
 require 'rake'
 require 'rake/clean'
 require 'rake/rdoctask'
-require 'spec/rake/spectask'
+require 'rspec'
+require 'rspec/core/rake_task'
 
 PROJECT_NAME = 'CRToDo'
 
@@ -18,20 +19,20 @@ task :run do |t|
 end
 
 desc "Run all examples"
-Spec::Rake::SpecTask.new('spec') do |spec|
-	spec.spec_files = TEST_FILES
-	spec.rcov = false
-	spec.ruby_opts = ["-Ilib"]
-	spec.spec_opts = ["--format", "specdoc", "--color", "--backtrace"]
+RSpec::Core::RakeTask.new(:rspec) do |rspec|
+	rspec.pattern = TEST_FILES
+	rspec.rcov = false
+	rspec.ruby_opts = ["-Ilib"]
+	rspec.rspec_opts = ["--format", "documentation", "--color", "--backtrace"]
 end
 
 desc "Run all examples with RCov"
-Spec::Rake::SpecTask.new('spec_rcov') do |spec|
-	spec.spec_files = TEST_FILES
-	spec.rcov = true
-	spec.ruby_opts = ["-Ilib"]
-	spec.rcov_opts = ["--no-html", "--no-rcovrt", "--gcc", "--exclude", TEST_FILES]
-	spec.spec_opts = ["--format", "specdoc", "--color", "--backtrace"]
+RSpec::Core::RakeTask.new(:rcov) do |rspec|
+	rspec.pattern = TEST_FILES
+	rspec.rcov = true
+	rspec.ruby_opts = ["-Ilib"]
+	rspec.rcov_opts = ["--no-html", "--no-rcovrt", "--gcc", "--exclude", TEST_FILES]
+	rspec.rspec_opts = ["--format", "documentation", "--color", "--backtrace"]
 end
 
 desc "Performs a static check of the CRToDo code"

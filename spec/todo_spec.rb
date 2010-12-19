@@ -14,7 +14,7 @@ TODO3    = "Making homework"
 
 TODO2_JSON = '{"name":"%s"}' % TODO2
 
-EMPTY_JSON = '{"open":[],"done":[]}'
+EMPTY_JSON = '{"done":[],"open":[]}'
 
 JSONFILE = File.join(File.dirname(__FILE__), "testlist.json")
 
@@ -279,7 +279,7 @@ describe CRToDo::ToDoUser do
 		listfile = @tempuserdir.children[0]
 		listfile.file?.should == true
 		listfile.should == @tempuserdir + (LIST1 + ".json")
-		listfile.read.should == '{"open":[%s],"done":[]}' % TODO2_JSON
+		listfile.read.should == '{"done":[],"open":[%s]}' % TODO2_JSON
 	end
 
 	it "supports renaming of todo lists" do

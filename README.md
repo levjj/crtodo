@@ -32,7 +32,8 @@ Requirements
 * RubyGems 1.3.5 or newer
 * Sinatra 0.9.6
 * Ruby JSON implementation 1.2.0
-* RSpec 1.2.9 *for running the tests*
+* RSpec 2.3.0 *for running the tests*
+* Rake 0.8.7 *for running the tests*
 * RCov 0.9.7.1 *for test coverage*
 * Reek 1.2.1 *for code style*
 * fcgi 0.8.8 *for FastCGI*
