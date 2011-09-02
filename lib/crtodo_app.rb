@@ -12,9 +12,9 @@ PROVIDERS = {"google" => "https://www.google.com/accounts/o8/id",
 
 EMAIL_URI = "http://axschema.org/contact/email"
 CONFIGFILENAME = "config.yml"
-THISDIR = File.expand_path(File.dirname(__FILE__))
-CONFIGFILE = File.join(THISDIR, "..", CONFIGFILENAME)
-OPENIDDIR =  File.join(THISDIR, "..", "openid")
+LIBDIR = File.dirname(File.expand_path(__FILE__))
+CONFIGFILE = File.join(LIBDIR, "..", CONFIGFILENAME)
+OPENIDDIR =  File.join(LIBDIR, "..", "openid")
 
 module CRToDo
 	class Application < Sinatra::Application
