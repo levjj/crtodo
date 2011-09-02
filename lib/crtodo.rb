@@ -2,6 +2,8 @@ require 'json'
 require 'redis'
 require 'fileutils'
 
+THISDIR = File.dirname(File.expand_path(__FILE__))
+
 module CRToDo
 
 	NEW_LIST_NAME = "New list"
