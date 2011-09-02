@@ -193,11 +193,10 @@ module CRToDo
 		
 		def import_old_data
 			Dir.new(File.join(THISDIR, "..", "data")).each do |userdir|
-				if !userdir.start_with?(".") then
+				if userdir =~ /^[^\.]/ then
 					user = get_user(userdir)
 					Dir.new(File.join(THISDIR, "..", "data", userdir)).each do |listfile|
-						if !listfile.start_with?(".") && listfile.end_with?(".json") &&
-							!user.lists.key?(listfile) then
+						if listfile  =~ /^[^\.].*\.json$/ && !user.lists.key?(listfile) then
 							list = user.lists[user.add_list listfile]
 							listfilename = File.join(THISDIR, "..", "data", userdir, listfile)
 							json = JSON.parse(IO.read(listfilename))
