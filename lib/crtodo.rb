@@ -1,6 +1,8 @@
 require 'json'
 require 'redis'
 
+THISDIR = File.expand_path(File.dirname(__FILE__))
+
 module CRToDo
 
 	NEW_LIST_NAME = "New list"
@@ -183,6 +185,27 @@ module CRToDo
 			@redis.hvals(USERS_KEY).each do |userid|
 				user = ToDoUser.new(@redis, userid)
 				@users[user.name] = user
+			end
+			if File.directory? File.join(THISDIR, "..", "data") then
+				import_old_data
+			end
+		end
+		
+		def import_old_data
+			Dir.new(File.join(THISDIR, "..", "data")).each do |userdir|
+				if !userdir.start_with?(".") then
+					user = get_user(userdir)
+					Dir.new(File.join(THISDIR, "..", "data", userdir)).each do |listfile|
+						if !listfile.start_with?(".") && listfile.end_with?(".json") &&
+							!user.lists.key?(listfile) then
+							list = user.lists[user.add_list listfile]
+							listfilename = File.join(THISDIR, "..", "data", userdir, listfile)
+							json = JSON.parse(IO.read(listfilename))
+							(json["done"] | json["open"]).each {|t| list.add_todo(t["name"])}
+							json["done"].each { |t| list.finish 0 }
+						end
+					end
+				end
 			end
 		end
 
