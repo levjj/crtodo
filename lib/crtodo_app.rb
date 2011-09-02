@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'sinatra'
 require 'erb'
+require 'yaml'
 require 'openid'
 require 'openid/store/filesystem'
 require 'openid/extensions/ax'
@@ -10,14 +11,28 @@ PROVIDERS = {"google" => "https://www.google.com/accounts/o8/id",
             "yahoo" => "http://www.yahoo.com/"}
 
 EMAIL_URI = "http://axschema.org/contact/email"
+CONFIGFILENAME = "config.yml"
+THISDIR = File.expand_path(File.dirname(__FILE__))
+CONFIGFILE = File.join(THISDIR, "..", CONFIGFILENAME)
+OPENIDDIR =  File.join(THISDIR, "..", "openid")
 
 module CRToDo
 	class Application < Sinatra::Application
 		def initialize
 			super
-			@db = CRToDo::ToDoDB.new
-			@store = OpenID::Store::Filesystem.new(
-				File.join(File.dirname(__FILE__), "..", "openid"))
+			if !File.exists?(CONFIGFILE) then
+				@configerror = "Required #{CONFIGFILENAME} does not exists"
+			else
+				cnf = YAML.load_file CONFIGFILE
+				if !cnf["redis"] || !cnf["redis"]["host"] || !cnf["redis"]["port"] ||
+					!cnf["redis"]["db"] then
+					@configerror = '<pre>#{CONFIGFILENAME}</pre> malformed.'
+				else
+					rcnf = cnf["redis"]
+					@db = CRToDo::ToDoDB.new(rcnf["host"], rcnf["port"], rcnf["db"])
+					@store = OpenID::Store::Filesystem.new(OPENIDDIR)
+				end
+			end
 		end
 
 		def openid_consumer
@@ -91,11 +106,16 @@ module CRToDo
 				redirect '/login'
 			end
 		end
-
+		
 		before do
-			if logged_in? then
-				@model = @db.get_user session[:user]
-				@listnames = @model.lists.keys
+			if @configerror then
+				@error = @configerror.to_s
+				halt erb :error
+			else
+				if logged_in? then
+					@model = @db.get_user session[:user]
+					@listnames = @model.lists.keys
+				end
 			end
 		end
 
@@ -158,3 +178,4 @@ module CRToDo
 		end
 	end
 end
+

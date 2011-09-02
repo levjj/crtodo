@@ -3,3 +3,4 @@ data
 openid
 .htaccess
 .htpasswd
+config.yml

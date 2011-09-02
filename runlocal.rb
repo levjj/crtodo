@@ -2,6 +2,8 @@
 
 require 'rubygems'
 require 'rack'
+
+$: << File.join(File.expand_path(File.dirname(__FILE__)), 'lib')
 load 'crtodo_app.rb'
 
 builder = Rack::Builder.new do
@@ -11,3 +13,4 @@ builder = Rack::Builder.new do
 end
 
 Rack::Handler::WEBrick.run(builder, {:Port => 4567})
+

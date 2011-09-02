@@ -56,3 +56,4 @@ Rake::RDocTask.new('doc') do |rdoc|
 end
 
 task :default => :run
+

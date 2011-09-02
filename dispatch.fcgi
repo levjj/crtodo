@@ -30,3 +30,4 @@ builder = Rack::Builder.new do
 end
 
 Rack::Handler::FastCGI.run(builder)
+

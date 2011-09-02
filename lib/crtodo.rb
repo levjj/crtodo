@@ -1,166 +1,102 @@
-require 'pathname'
 require 'json'
-require 'fileutils'
+require 'redis'
 
 module CRToDo
-	class ToDo
-		attr_reader :name
 
-		def initialize(name)
-			super()
-			@name = name
-			@done = false
-		end
-
-		def self.from_hash(hash)
-			self.new hash["name"]
-		end
-
-		def self.from_json(json)
-			self.from_hash JSON.parse(json)
-		end
-
-		def to_json(*a)
-			{ :name => self.name }.to_json(*a)
-		end
+	NEW_LIST_NAME = "New list"
+	
+	LASTID_SUFFIX = "_lastid"
+	NAME_SUFFIX = "_name"
+	OPEN_SUFFIX = "_open"
+	DONE_SUFFIX = "_done"
+	LISTS_SUFFIX = "_lists"
+	USERS_KEY = "users"
+	
+	def self.next_id(redis, scheme)
+		scheme + "_" + redis.incr(scheme + LASTID_SUFFIX).to_s
 	end
-
+	
+	def self.del_idcounters(redis)
+		redis.del "todolist" + LASTID_SUFFIX
+		redis.del "user" + LASTID_SUFFIX
+	end
+	
 	class ToDoList
-		attr_reader :path
+		attr_reader :id, :name, :open_entries, :done_entries
 
-		def initialize(path)
-			super()
+		def initialize(redis, id, new = false)
+			@redis = redis
+			@id = id
+			if new then create id else load end
+		end
+		
+		def create(name)
+			@id = CRToDo::next_id(@redis, "todolist")
+			self.name = name
 			@open_entries = []
 			@done_entries = []
-			@loaded = false
-			self.path = path
+			save
 		end
-
-		def name
-			@path.basename.to_s.chomp ".json"
+		
+		def load
+			@name = @redis[@id + NAME_SUFFIX]
+			@open_entries = JSON.parse(@redis[@id + OPEN_SUFFIX])
+			@done_entries = JSON.parse(@redis[@id + DONE_SUFFIX])
 		end
-
-		def loaded?
-			@loaded
+		
+		def save
+			@redis[@id + NAME_SUFFIX] = @name
+			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
+			@redis[@id + DONE_SUFFIX] = @done_entries.to_json
 		end
-
-		def path=(path)
-			@path = path
-			self.save_list unless @path.exist?
+		
+		def name=(newname)
+			@redis[@id + NAME_SUFFIX] = @name = newname
 		end
-
-		def ensure_loaded
-			if !@loaded then
-				load_list
-			end
-		end
-
-		def read_op(&block)
-			ensure_loaded
-			yield
-		end
-
-		def write_op(&block)
-			ensure_loaded
-			yield
-			save_list
-		end
-
+		
 		def add_todo(name, position = nil)
-			write_op do
-				position ||= @open_entries.size
-				@open_entries.insert(position, ToDo.new(name))
-			end
+			position ||= @open_entries.size
+			@open_entries.insert(position, name)
+			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
 			return position
 		end
 
 		def move_todo(from_index, to_index)
-			write_op do
-				todo = @open_entries[from_index]
-				return if todo.nil?
-				@open_entries.delete_at from_index
-				@open_entries.insert(to_index, todo)
-			end
+			todo = @open_entries[from_index]
+			return if todo.nil?
+			@open_entries.delete_at from_index
+			@open_entries.insert(to_index, todo)
+			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
 			return to_index
 		end
 
 		def finish(pos)
-			write_op do
-				todo = @open_entries[pos]
-				return if todo.nil?
-				@open_entries.delete_at pos
-				@done_entries << todo
-			end
+			todo = @open_entries[pos]
+			return if todo.nil?
+			@open_entries.delete_at pos
+			@done_entries << todo
+			save
 			return @done_entries.size - 1
 		end
 
-		def reopen(pos)
-			write_op do
-				todo = @done_entries[pos]
-				return if todo.nil?
-				@done_entries.delete_at pos
-				@open_entries << todo
-			end
-			return @open_entries.size - 1
+		def delete_todo_at(index)
+			@open_entries.delete_at index
+			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
+			return index
 		end
 
 		def delete
-			@path.delete
+			@redis.del @id + NAME_SUFFIX
+			@redis.del @id + OPEN_SUFFIX
+			@redis.del @id + DONE_SUFFIX
 		end
-
-		def delete_open_todo_at(index)
-			write_op do
-				@open_entries.delete_at index
-			end
-			return index
-		end
-
-		def delete_done_todo_at(index)
-			write_op do
-				@done_entries.delete_at index
-			end
-			return index
-		end
-
-		def open_entries
-			read_op do
-				@open_entries
-			end
-		end
-
-		def done_entries
-			read_op do
-				@done_entries
-			end
-		end
-
+		
 		def entries
-			read_op do
-				@open_entries + @done_entries
-			end
+			@open_entries + @done_entries
 		end
 
 		def done?
-			read_op do
-				@open_entries.empty?
-			end
-		end
-
-		def load_list
-			@open_entries = []
-			@done_entries = []
-			json = JSON.parse @path.read
-			json["open"].each do |todo|
-				@open_entries << ToDo.from_hash(todo)
-			end
-			json["done"].each do |todo|
-				@done_entries << ToDo.from_hash(todo)
-			end
-			@loaded = true
-		end
-
-		def save_list
-			@path.open('w') {|file| file.write self.to_json}
+			@open_entries.empty?
 		end
 
 		def to_json(*a)
@@ -169,60 +105,62 @@ module CRToDo
 	end
 
 	class ToDoUser
-		attr_reader :lists
+		attr_reader :id, :lists, :name
 
-		def initialize(path)
+		def initialize(redis, id, new = false)
+			@redis = redis
+			@id = id
 			@lists = {}
-			self.path = path
+			if new then create id else load end
 		end
-
-		def name
-			@path.basename.to_s
+		
+		def create(name)
+			@id = CRToDo::next_id(@redis, "user")
+			self.name = name
 		end
-
-		def path=(newpath)
-			@path = newpath
-			@path.mkdir unless @path.exist?
-			load_lists
+		
+		def load
+			@name = @redis[@id + NAME_SUFFIX]
+			@redis.hvals(@id + LISTS_SUFFIX).each do |list_id|
+			  list = ToDoList.new @redis, list_id, false
+				@lists[list.name] = list
+			end
+		end
+		
+		def name=(newname)
+			@redis[@id + NAME_SUFFIX] = @name = newname
 		end
 
 		def self.safe_name?(name)
 			return name.length > 0 &&
-			       name.length < 256 &&
+			       name.length < 255 &&
 			       !name.include?('/') &&
 			       !name.include?('\0')
 		end
 
 		def add_list(name)
 			return nil unless ToDoUser.safe_name? name
-			list = ToDoList.new @path + (name + ".json")
+			list = ToDoList.new @redis, name, true
 			@lists[list.name] = list
+			@redis.hset @id + LISTS_SUFFIX, list.name, list.id
 			return name
 		end
 
 		def delete_list(name)
 			@lists[name].delete
 			@lists.delete(name)
+			@redis.hdel @id + LISTS_SUFFIX, name
 			return name
 		end
 
 		def rename_list(oldname, newname)
 			return nil unless ToDoUser.safe_name? newname
 			list = @lists.delete(oldname)
-			newpath = @path + (newname + ".json")
-			FileUtils::mv(list.path, newpath)
-			list.path = newpath
+			list.name = newname
 			@lists[newname] = list
+			@redis.hdel @id + LISTS_SUFFIX, oldname
+			@redis.hset @id + LISTS_SUFFIX, newname, list.id
 			return newname
-		end
-
-		def load_lists
-			@path.children(false).each do |listpath|
-				if listpath.extname == ".json" then
-					list = ToDoList.new @path + listpath.basename.to_s
-					@lists[list.name] = list
-				end
-			end
 		end
 
 		def to_json(*a)
@@ -230,19 +168,22 @@ module CRToDo
 		end
 
 		def delete
-			@path.delete
+			@lists.values.each {|l| l.delete}
+			@redis.del @id + NAME_SUFFIX
+			@redis.del @id + LISTS_SUFFIX
 		end
 	end
 
 	class ToDoDB
-		attr_reader :users
+		attr_reader :users, :redis
 
-		def initialize(path = nil)
-			path ||= File.join(File.dirname(__FILE__), "..", "data")
-			@path = Pathname.new(path)
-			@path.mkdir unless @path.exist?
+		def initialize(host, port, db)
+			@redis = Redis.new :host => host, :port => port, :db => db
 			@users = {}
-			load_users
+			@redis.hvals(USERS_KEY).each do |userid|
+				user = ToDoUser.new(@redis, userid)
+				@users[user.name] = user
+			end
 		end
 
 		def get_user(username)
@@ -254,23 +195,22 @@ module CRToDo
 
 		def add_user(username)
 			return nil unless ToDoUser.safe_name? username
-			user = ToDoUser.new @path + username
-			@users[username] = user
+			@users[username] = ToDoUser.new(@redis, username, true)
+			@redis.hset USERS_KEY, username, @users[username].id
 			return username
 		end
 
 		def delete_user(username)
 			@users[username].delete
 			@users.delete(username)
+			@redis.hdel USERS_KEY, username
 			return username
 		end
-
-		def load_users
-			@path.children(true).each do |userpath|
-				if userpath.directory? then
-					add_user userpath.basename.to_s
-				end
-			end
+		
+		def delete
+			@users.values.each {|u| u.delete}
+			@redis.del USERS_KEY
 		end
 	end
 end
+
