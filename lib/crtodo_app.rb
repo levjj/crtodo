@@ -46,6 +46,16 @@ module CRToDo
 		def root_url
 			request.url.match(/(^.*\/{2}[^\/]*)/)[1]
 		end
+		
+		def userblock
+			if @error then
+				''
+			elsif session[:user] then
+				ERB::Util.h(session[:user]) + ', <a href="/logout">Sign out</a>'
+			else
+				'Not logged in'
+			end
+		end
 
 		error do
 			@error = env['sinatra.error'].message
