@@ -29,8 +29,12 @@ module CRToDo
 					@configerror = '<pre>#{CONFIGFILENAME}</pre> malformed.'
 				else
 					rcnf = cnf["redis"]
-					@db = CRToDo::ToDoDB.new(rcnf["host"], rcnf["port"], rcnf["db"])
-					@store = OpenID::Store::Filesystem.new(OPENIDDIR)
+					begin
+						@db = CRToDo::ToDoDB.new(rcnf["host"], rcnf["port"], rcnf["db"])
+						@store = OpenID::Store::Filesystem.new(OPENIDDIR)
+					rescue Exception => e
+						@configerror = e.to_s
+					end
 				end
 			end
 		end
