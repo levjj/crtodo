@@ -12,6 +12,7 @@ restricted to basic features.
 Features
 ========
 
+* Multiuser login by using OpenID
 * Managing multiple to-do lists
 * Adding simple, one-line to-do entries
 * Ordering to-do entries by drag-and-drop
@@ -32,6 +33,7 @@ Requirements
 * RubyGems 1.3.5 or newer
 * Sinatra 0.9.6
 * Ruby JSON implementation 1.2.0
+* Redis 2.2.2
 * Ruby-OpenID 2.1.8
 * RSpec 2.3.0 *for running the tests*
 * Rake 0.8.7 *for running the tests*
@@ -39,12 +41,23 @@ Requirements
 * Reek 1.2.1 *for code style*
 * fcgi 0.8.8 *for FastCGI*
 * fcgiwrap 0.1.6 *for FastCGI*
+* thin 1.2.11 for *thin*
 
 Installation
 ============
 
 The service is implemented with [Sinatra][2] and runs
-either stand-alone or in a webserver with [FastCGI][3].
+either stand-alone, in a webserver with [FastCGI][3] or with the help of [thin][9].
+The data backend is a [redis][10] database.
+
+Redis
+-----
+
+Install a redis database so that it is accessible from the CRToDo application.
+Then configure the CRToDo application by copying the example.config.yml to
+config.yml and making appropiate adjustments to the config. It is not
+recommended to use the same database number for other applications since
+it might cause conflicts.
 
 Stand-alone
 -----------
@@ -96,7 +109,32 @@ the easiest way to fix it, is by replacing line 197 in the file /usr/lib/ruby/ge
 with:
 
     [:scheme, :host, :port].each do |meth|
-        
+
+Thin
+----
+
+Write a thin.yml file for configuring *thin*:
+
+    ---
+        environment: production
+        chdir: /path/to/crtodo/
+        address: 127.0.0.1
+        port: 4567
+        pid: /.../thin.pid
+        rackup: /path/to/crtodo/config.ru
+        log: /.../thin.log
+        max_conns: 64
+        timeout: 30
+        max_persistent_conns: 32
+        daemonize: true
+
+Start it either by
+
+    $ thin -C thin.yml -R config.ru start
+    
+or by putting the thin.yml file in the /etc/thin directory if thin is
+configured as a service.
+
 Acknowledgement
 ===============
 
@@ -112,3 +150,5 @@ under the [Creative Commons Attribution License][7] by the [Axialis Team][8].
 [6]: http://jquery.com/
 [7]: http://creativecommons.org/licenses/by/2.5/
 [8]: http://axialis.com/
+[9]: http://code.macournoyer.com/thin/
+[10]: http://redis.io/
