@@ -13,7 +13,7 @@ TODO3    = "Making homework"
 
 TODO2_JSON = '{"name":"%s"}' % TODO2
 
-EMPTY_JSON = '{"done":[],"open":[]}'
+EMPTY_JSON = '{"open":[],"done":[]}'
 
 describe CRToDo::ToDoList do
 	before(:each) do
