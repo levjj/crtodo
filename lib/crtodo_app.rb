@@ -30,7 +30,9 @@ module CRToDo
 				else
 					rcnf = cnf["redis"]
 					begin
-						@db = CRToDo::ToDoDB.new(rcnf["host"], rcnf["port"], rcnf["db"])
+						@redis = Redis.new :host => rcnf["host"],
+						                   :port => rcnf["port"],
+						                   :db => rcnf["db"]
 						@store = OpenID::Store::Filesystem.new(OPENIDDIR)
 					rescue Exception => e
 						@configerror = e.to_s
@@ -127,6 +129,7 @@ module CRToDo
 				halt erb :error
 			else
 				if logged_in? then
+					@db = CRToDo::ToDoDB.new @redis
 					@model = @db.get_user session[:user]
 					@listnames = @model.lists.keys
 				end
@@ -184,11 +187,7 @@ module CRToDo
 		end
 
 		delete '/api/:name/open/:todo' do |name, todo|
-			@model.lists[name].delete_open_todo_at(todo.to_i)
-		end
-
-		delete '/api/:name/done/:todo' do |name, todo|
-			@model.lists[name].delete_done_todo_at(todo.to_i, true)
+			@model.lists[name].delete_todo_at(todo.to_i)
 		end
 	end
 end

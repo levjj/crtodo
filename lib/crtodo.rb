@@ -23,32 +23,47 @@ module CRToDo
 	end
 	
 	class ToDoList
-		attr_reader :id, :name, :open_entries, :done_entries
+		attr_reader :id
 
 		def initialize(redis, id, new = false)
 			@redis = redis
+			@loaded = false
 			@id = id
-			if new then create id else load end
+			create id if new
 		end
 		
 		def create(name)
 			@id = CRToDo::next_id(@redis, "todolist")
-			self.name = name
-			@open_entries = []
-			@done_entries = []
-			save
+			@redis[@id + NAME_SUFFIX] = @name = name
+			@redis[@id + OPEN_SUFFIX] = @open_entries = []
+			@redis[@id + DONE_SUFFIX] = @done_entries = []
+			@loaded = true
+		end
+		
+		def name
+			load unless loaded?
+			@name
+		end
+		
+		def open_entries
+			load unless loaded?
+			@open_entries
+		end
+		
+		def done_entries
+			load unless loaded?
+			@done_entries
+		end
+		
+		def loaded?
+			@loaded
 		end
 		
 		def load
 			@name = @redis[@id + NAME_SUFFIX]
 			@open_entries = JSON.parse(@redis[@id + OPEN_SUFFIX])
 			@done_entries = JSON.parse(@redis[@id + DONE_SUFFIX])
-		end
-		
-		def save
-			@redis[@id + NAME_SUFFIX] = @name
-			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
-			@redis[@id + DONE_SUFFIX] = @done_entries.to_json
+			@loaded = true
 		end
 		
 		def name=(newname)
@@ -56,33 +71,34 @@ module CRToDo
 		end
 		
 		def add_todo(name, position = nil)
-			position ||= @open_entries.size
-			@open_entries.insert(position, name)
-			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
+			position ||= open_entries.size
+			open_entries.insert(position, name)
+			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
 			return position
 		end
 
 		def move_todo(from_index, to_index)
-			todo = @open_entries[from_index]
+			todo = open_entries[from_index]
 			return if todo.nil?
-			@open_entries.delete_at from_index
-			@open_entries.insert(to_index, todo)
-			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
+			open_entries.delete_at from_index
+			open_entries.insert(to_index, todo)
+			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
 			return to_index
 		end
 
 		def finish(pos)
-			todo = @open_entries[pos]
+			todo = open_entries[pos]
 			return if todo.nil?
-			@open_entries.delete_at pos
-			@done_entries << todo
-			save
-			return @done_entries.size - 1
+			open_entries.delete_at pos
+			done_entries << todo
+			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
+			@redis[@id + DONE_SUFFIX] = done_entries.to_json
+			return done_entries.size - 1
 		end
 
 		def delete_todo_at(index)
-			@open_entries.delete_at index
-			@redis[@id + OPEN_SUFFIX] = @open_entries.to_json
+			open_entries.delete_at index
+			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
 			return index
 		end
 
@@ -93,39 +109,56 @@ module CRToDo
 		end
 		
 		def entries
-			@open_entries + @done_entries
+			open_entries + done_entries
 		end
 
 		def done?
-			@open_entries.empty?
+			open_entries.empty?
 		end
 
 		def to_json(*a)
-			{:open => @open_entries, :done => @done_entries}.to_json
+			{:open => open_entries, :done => done_entries}.to_json
 		end
 	end
 
 	class ToDoUser
-		attr_reader :id, :lists, :name
+		attr_reader :id
 
 		def initialize(redis, id, new = false)
 			@redis = redis
+			@loaded = false
 			@id = id
 			@lists = {}
-			if new then create id else load end
+			create id if new
 		end
 		
 		def create(name)
 			@id = CRToDo::next_id(@redis, "user")
 			self.name = name
+			@loaded = true
+		end
+		
+		def loaded?
+			@loaded
+		end
+		
+		def lists
+			load unless loaded?
+			@lists
+		end
+		
+		def name
+			load unless loaded?
+			@name
 		end
 		
 		def load
 			@name = @redis[@id + NAME_SUFFIX]
-			@redis.hvals(@id + LISTS_SUFFIX).each do |list_id|
+			@redis.hgetall(@id + LISTS_SUFFIX).each do |listname, list_id|
 			  list = ToDoList.new @redis, list_id, false
-				@lists[list.name] = list
+				@lists[listname] = list
 			end
+			@loaded = true
 		end
 		
 		def name=(newname)
@@ -142,34 +175,34 @@ module CRToDo
 		def add_list(name)
 			return nil unless ToDoUser.safe_name? name
 			list = ToDoList.new @redis, name, true
-			@lists[list.name] = list
+			lists[list.name] = list
 			@redis.hset @id + LISTS_SUFFIX, list.name, list.id
 			return name
 		end
 
 		def delete_list(name)
-			@lists[name].delete
-			@lists.delete(name)
+			lists[name].delete
+			lists.delete(name)
 			@redis.hdel @id + LISTS_SUFFIX, name
 			return name
 		end
 
 		def rename_list(oldname, newname)
 			return nil unless ToDoUser.safe_name? newname
-			list = @lists.delete(oldname)
+			list = lists.delete(oldname)
 			list.name = newname
-			@lists[newname] = list
+			lists[newname] = list
 			@redis.hdel @id + LISTS_SUFFIX, oldname
 			@redis.hset @id + LISTS_SUFFIX, newname, list.id
 			return newname
 		end
 
 		def to_json(*a)
-			@lists.keys.sort.to_json(*a)
+			lists.keys.sort.to_json(*a)
 		end
 
 		def delete
-			@lists.values.each {|l| l.delete}
+			lists.values.each {|l| l.delete}
 			@redis.del @id + NAME_SUFFIX
 			@redis.del @id + LISTS_SUFFIX
 		end
@@ -177,13 +210,13 @@ module CRToDo
 
 	class ToDoDB
 		attr_reader :users, :redis
-
-		def initialize(host, port, db)
-			@redis = Redis.new :host => host, :port => port, :db => db
+		
+		def initialize(redis)
+			@redis = redis
 			@users = {}
-			@redis.hvals(USERS_KEY).each do |userid|
+			@redis.hgetall(USERS_KEY).each do |username, userid|
 				user = ToDoUser.new(@redis, userid)
-				@users[user.name] = user
+				@users[username] = user
 			end
 			if File.directory? File.join(THISDIR, "..", "data") then
 				import_old_data
@@ -209,28 +242,28 @@ module CRToDo
 		end
 
 		def get_user(username)
-			unless @users.key? username
+			unless users.key? username
 				add_user username
 			end
-			return @users[username]
+			return users[username]
 		end
 
 		def add_user(username)
 			return nil unless ToDoUser.safe_name? username
-			@users[username] = ToDoUser.new(@redis, username, true)
-			@redis.hset USERS_KEY, username, @users[username].id
+			users[username] = ToDoUser.new(@redis, username, true)
+			@redis.hset USERS_KEY, username, users[username].id
 			return username
 		end
 
 		def delete_user(username)
-			@users[username].delete
-			@users.delete(username)
+			users[username].delete
+			users.delete(username)
 			@redis.hdel USERS_KEY, username
 			return username
 		end
 		
 		def delete
-			@users.values.each {|u| u.delete}
+			users.values.each {|u| u.delete}
 			@redis.del USERS_KEY
 		end
 	end

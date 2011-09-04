@@ -2,22 +2,25 @@ require 'rubygems'
 require 'json'
 require 'crtodo'
 
-TESTUSER = "user@example.com"
+TESTUSER   = "user@example.com"
 
-LIST1    = "Test List"
-LIST2    = "Second List"
+LIST1      = "Test List"
+LIST2      = "Second List"
 
-TODO1    = "Go shopping"
-TODO2    = "Clean the car"
-TODO3    = "Making homework"
+TODO1      = "Go shopping"
+TODO2      = "Clean the car"
+TODO3      = "Making homework"
 
 TODO2_JSON = '{"name":"%s"}' % TODO2
 
-EMPTY_JSON = '{"open":[],"done":[]}'
+EMPTY_LIST = {"open" => [], "done" => []}
 
 describe CRToDo::ToDoList do
-	before(:each) do
+	before(:all) do
 		@redis = Redis.new :host => '127.0.0.1', :port => '6379', :db => 3
+	end
+	
+	before(:each) do
 		@redis.flushdb
 		@todolist = CRToDo::ToDoList.new @redis, LIST1, true
 	end
@@ -37,7 +40,7 @@ describe CRToDo::ToDoList do
 		@todolist.entries.empty?.should == true
 		@todolist.open_entries.empty?.should == true
 		@todolist.done_entries.empty?.should == true
-		@todolist.to_json.should ==  EMPTY_JSON
+		JSON.parse(@todolist.to_json).should ==  EMPTY_LIST
 	end
 
 	it "stores newly added todo entries" do
@@ -99,7 +102,7 @@ describe CRToDo::ToDoList do
 	it "should ignore bad move operations" do
 		@todolist.move_todo(1, 0)
 		@todolist.entries.empty?.should == true
-		@todolist.to_json.should == EMPTY_JSON
+		JSON.parse(@todolist.to_json).should ==  EMPTY_LIST
 	end
 
 	it "supports the deletion of todo entries" do
@@ -107,7 +110,7 @@ describe CRToDo::ToDoList do
 		@todolist.delete_todo_at 0
 		@todolist.done?.should == true
 		@todolist.entries.empty?.should == true
-		@todolist.to_json.should == EMPTY_JSON
+		JSON.parse(@todolist.to_json).should ==  EMPTY_LIST
 	end
 
 	it "is done after finishing all entries" do
@@ -144,8 +147,11 @@ describe CRToDo::ToDoList do
 end
 
 describe CRToDo::ToDoUser do
-	before(:each) do
+	before(:all) do
 		@redis = Redis.new :host => '127.0.0.1', :port => '6379', :db => 3
+	end
+	
+	before(:each) do
 		@redis.flushdb
 		@todouser = CRToDo::ToDoUser.new @redis, TESTUSER, true
 	end
@@ -240,10 +246,13 @@ describe CRToDo::ToDoUser do
 end
 
 describe CRToDo::ToDoDB do
+	before(:all) do
+		@redis = Redis.new :host => '127.0.0.1', :port => '6379', :db => 3
+	end
+	
 	before(:each) do
-		@tododb = CRToDo::ToDoDB.new '127.0.0.1', '6379', 3
-		@redis = @tododb.redis
 		@redis.flushdb
+		@tododb = CRToDo::ToDoDB.new @redis
 	end
 
 	after(:each) do

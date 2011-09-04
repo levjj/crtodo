@@ -4,3 +4,6 @@ openid
 .htaccess
 .htpasswd
 config.yml
+thin.log
+thin.pid
+thin.yml
