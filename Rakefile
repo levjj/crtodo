@@ -3,9 +3,9 @@
 require 'rubygems'
 require 'rake'
 require 'rake/clean'
-require 'rake/rdoctask'
 require 'rspec'
 require 'rspec/core/rake_task'
+require 'rdoc/task'
 
 PROJECT_NAME = 'CRToDo'
 
@@ -41,16 +41,14 @@ task :check do |check|
 	exec "ruby -c -w #{SRC_FILES}}"
 end
 
-Rake::RDocTask.new('doc') do |rdoc|
+RDoc::Task.new('doc') do |rdoc|
 	rdoc.name = :doc
 	rdoc.title = "CRToDo"
 	rdoc.main = 'README.markdown'
 	rdoc.rdoc_dir = 'doc'
 	rdoc.rdoc_files.include #{lib/*.rb README.markdown}
 	rdoc.options += [
-		'-SHN',
-		'-A', 'property=Property',
-		"--opname=index.html",
+		'-A',
 		"--line-numbers",
 	]
 end
