@@ -6,8 +6,6 @@ THISDIR = File.dirname(File.expand_path(__FILE__))
 
 module CRToDo
 
-	NEW_LIST_NAME = "New list"
-	
 	LASTID_SUFFIX = "_lastid"
 	NAME_SUFFIX = "_name"
 	OPEN_SUFFIX = "_open"
