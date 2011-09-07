@@ -6,20 +6,23 @@ THISDIR = File.dirname(File.expand_path(__FILE__))
 
 module CRToDo
 
-	LASTID_SUFFIX = "_lastid"
+	LASTID_SUFFIX = "lastid"
 	NAME_SUFFIX = "_name"
 	OPEN_SUFFIX = "_open"
 	DONE_SUFFIX = "_done"
 	LISTS_SUFFIX = "_lists"
+	
 	USERS_KEY = "users"
+	USER_KEY = "user_"
+	TODOLIST_KEY = "todolist_"
 	
 	def self.next_id(redis, scheme)
-		scheme + "_" + redis.incr(scheme + LASTID_SUFFIX).to_s
+		redis.incr(scheme + LASTID_SUFFIX).to_s
 	end
 	
 	def self.del_idcounters(redis)
-		redis.del "todolist" + LASTID_SUFFIX
-		redis.del "user" + LASTID_SUFFIX
+		redis.del TODOLIST_KEY + LASTID_SUFFIX
+		redis.del USER_KEY + LASTID_SUFFIX
 	end
 	
 	class ToDoList
@@ -33,10 +36,10 @@ module CRToDo
 		end
 		
 		def create(name)
-			@id = CRToDo::next_id(@redis, "todolist")
-			@redis[@id + NAME_SUFFIX] = @name = name
-			@redis[@id + OPEN_SUFFIX] = @open_entries = []
-			@redis[@id + DONE_SUFFIX] = @done_entries = []
+			@id = CRToDo::next_id(@redis, TODOLIST_KEY)
+			@redis[TODOLIST_KEY + @id + NAME_SUFFIX] = @name = name
+			@redis[TODOLIST_KEY + @id + OPEN_SUFFIX] = @open_entries = []
+			@redis[TODOLIST_KEY + @id + DONE_SUFFIX] = @done_entries = []
 			@loaded = true
 		end
 		
@@ -60,20 +63,20 @@ module CRToDo
 		end
 		
 		def load
-			@name = @redis[@id + NAME_SUFFIX]
-			@open_entries = JSON.parse(@redis[@id + OPEN_SUFFIX])
-			@done_entries = JSON.parse(@redis[@id + DONE_SUFFIX])
+			@name = @redis[TODOLIST_KEY + @id + NAME_SUFFIX]
+			@open_entries = JSON.parse(@redis[TODOLIST_KEY + @id + OPEN_SUFFIX])
+			@done_entries = JSON.parse(@redis[TODOLIST_KEY + @id + DONE_SUFFIX])
 			@loaded = true
 		end
 		
 		def name=(newname)
-			@redis[@id + NAME_SUFFIX] = @name = newname
+			@redis[TODOLIST_KEY + @id + NAME_SUFFIX] = @name = newname
 		end
 		
 		def add_todo(name, position = nil)
 			position ||= open_entries.size
 			open_entries.insert(position, name)
-			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
+			@redis[TODOLIST_KEY + @id + OPEN_SUFFIX] = open_entries.to_json
 			return position
 		end
 
@@ -82,7 +85,7 @@ module CRToDo
 			return if todo.nil?
 			open_entries.delete_at from_index
 			open_entries.insert(to_index, todo)
-			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
+			@redis[TODOLIST_KEY + @id + OPEN_SUFFIX] = open_entries.to_json
 			return to_index
 		end
 
@@ -91,21 +94,21 @@ module CRToDo
 			return if todo.nil?
 			open_entries.delete_at pos
 			done_entries << todo
-			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
-			@redis[@id + DONE_SUFFIX] = done_entries.to_json
+			@redis[TODOLIST_KEY + @id + OPEN_SUFFIX] = open_entries.to_json
+			@redis[TODOLIST_KEY + @id + DONE_SUFFIX] = done_entries.to_json
 			return done_entries.size - 1
 		end
 
 		def delete_todo_at(index)
 			open_entries.delete_at index
-			@redis[@id + OPEN_SUFFIX] = open_entries.to_json
+			@redis[TODOLIST_KEY + @id + OPEN_SUFFIX] = open_entries.to_json
 			return index
 		end
 
 		def delete
-			@redis.del @id + NAME_SUFFIX
-			@redis.del @id + OPEN_SUFFIX
-			@redis.del @id + DONE_SUFFIX
+			@redis.del TODOLIST_KEY + @id + NAME_SUFFIX
+			@redis.del TODOLIST_KEY + @id + OPEN_SUFFIX
+			@redis.del TODOLIST_KEY + @id + DONE_SUFFIX
 		end
 		
 		def entries
@@ -133,7 +136,7 @@ module CRToDo
 		end
 		
 		def create(name)
-			@id = CRToDo::next_id(@redis, "user")
+			@id = CRToDo::next_id(@redis, USER_KEY)
 			self.name = name
 			@loaded = true
 		end
@@ -153,8 +156,8 @@ module CRToDo
 		end
 		
 		def load
-			@name = @redis[@id + NAME_SUFFIX]
-			@redis.hgetall(@id + LISTS_SUFFIX).each do |listname, list_id|
+			@name = @redis[USER_KEY + @id + NAME_SUFFIX]
+			@redis.hgetall(USER_KEY + @id + LISTS_SUFFIX).each do |listname, list_id|
 			  list = ToDoList.new @redis, list_id, false
 				@lists[listname] = list
 			end
@@ -162,7 +165,7 @@ module CRToDo
 		end
 		
 		def name=(newname)
-			@redis[@id + NAME_SUFFIX] = @name = newname
+			@redis[USER_KEY + @id + NAME_SUFFIX] = @name = newname
 		end
 
 		def self.safe_name?(name)
@@ -176,14 +179,14 @@ module CRToDo
 			return nil unless ToDoUser.safe_name? name
 			list = ToDoList.new @redis, name, true
 			lists[list.name] = list
-			@redis.hset @id + LISTS_SUFFIX, list.name, list.id
+			@redis.hset USER_KEY + @id + LISTS_SUFFIX, list.name, list.id
 			return name
 		end
 
 		def delete_list(name)
 			lists[name].delete
 			lists.delete(name)
-			@redis.hdel @id + LISTS_SUFFIX, name
+			@redis.hdel USER_KEY + @id + LISTS_SUFFIX, name
 			return name
 		end
 
@@ -192,8 +195,8 @@ module CRToDo
 			list = lists.delete(oldname)
 			list.name = newname
 			lists[newname] = list
-			@redis.hdel @id + LISTS_SUFFIX, oldname
-			@redis.hset @id + LISTS_SUFFIX, newname, list.id
+			@redis.hdel USER_KEY + @id + LISTS_SUFFIX, oldname
+			@redis.hset USER_KEY + @id + LISTS_SUFFIX, newname, list.id
 			return newname
 		end
 
@@ -203,8 +206,8 @@ module CRToDo
 
 		def delete
 			lists.values.each {|l| l.delete}
-			@redis.del @id + NAME_SUFFIX
-			@redis.del @id + LISTS_SUFFIX
+			@redis.del USER_KEY + @id + NAME_SUFFIX
+			@redis.del USER_KEY + @id + LISTS_SUFFIX
 		end
 	end
 
